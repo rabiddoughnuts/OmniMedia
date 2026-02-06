@@ -1,0 +1,23 @@
+{
+  "name": "omnimediatrak",
+  "version": "0.0.1",
+  "description": "all in one media tracking solution",
+  "homepage": "https://github.com/rabiddoughnuts/OmniMedia#readme",
+  "bugs": {
+    "url": "https://github.com/rabiddoughnuts/OmniMedia/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rabiddoughnuts/OmniMedia.git"
+  },
+  "license": "ISC",
+  "author": "Brandon Walker",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "fastify": "^5.7.4"
+  }
+}
