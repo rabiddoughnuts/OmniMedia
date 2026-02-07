@@ -9,14 +9,32 @@ Repository started during Wright State Hackathon 2026, for a multi-media all in 
 
 ## Quick start
 
-### API
+### 1. Start Postgres
 
-1. cd api
-2. npm install
-3. npm run dev
+```bash
+docker compose up -d
+```
 
-### Web
+### 2. Set up the database
 
-1. cd web
-2. npm install
-3. npm run dev
+```bash
+cd api
+npm run db:setup
+```
+
+### 3. Start API
+
+```bash
+cd api
+npm run dev
+```
+
+### 4. Start Web
+
+```bash
+cd web
+npm run dev
+```
+
+**API:** http://localhost:3001
+**Web:** http://localhost:3000
