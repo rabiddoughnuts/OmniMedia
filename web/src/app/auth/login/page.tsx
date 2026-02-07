@@ -50,7 +50,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="page">
+    <section className="page">
       <header className="page__header">
         <div>
           <p className="page__eyebrow">Welcome back</p>
@@ -107,6 +107,6 @@ export default function LoginPage() {
           New here? <a href="/auth/register">Create an account</a>
         </p>
       </section>
-    </main>
+    </section>
   );
 }

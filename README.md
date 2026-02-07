@@ -7,6 +7,17 @@ Repository started during Wright State Hackathon 2026, for a multi-media all in 
 - web/: Next.js app
 - api/: Fastify API
 
+## Assets
+
+Fonts are self-hosted in [web/public/fonts](web/public/fonts):
+
+- Poppins-Variable.woff2
+- SpaceGrotesk-Variable.woff2
+
+If you only have TTF files, either convert them to WOFF2 or update the
+`@font-face` URLs in [web/src/app/globals.css](web/src/app/globals.css) to point
+to the .ttf files.
+
 ## Quick start
 
 ### 1. Start Postgres
@@ -49,6 +60,15 @@ npm run dev
 
 **API:** http://localhost:3001
 **Web:** http://localhost:3000
+
+## Pages
+
+- / (home)
+- /catalog (media catalog + filters)
+- /list (personal list)
+- /auth/register
+- /auth/login
+- /auth/logout
 
 ## Quick API check (curl)
 

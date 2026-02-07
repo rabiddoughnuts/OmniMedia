@@ -50,7 +50,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="page">
+    <section className="page">
       <header className="page__header">
         <div>
           <p className="page__eyebrow">Private alpha</p>
@@ -107,6 +107,6 @@ export default function RegisterPage() {
           Already have an account? <a href="/auth/login">Sign in</a>
         </p>
       </section>
-    </main>
+    </section>
   );
 }

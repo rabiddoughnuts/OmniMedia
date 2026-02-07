@@ -7,7 +7,7 @@
 ### Must-have user flows
 
 - Sign in with email/password (local accounts only for MVP)
-- Browse catalog list and detail pages (public)
+- Browse catalog list (public) with basic search/type filtering
 - Add/remove a title to a personal list (planned/in-progress/completed)
 - View personal list
 
@@ -58,9 +58,10 @@
 
 ### 12-18h: web UI
 
-- Public catalog list/detail
-- Auth pages
+- Public catalog list with search/type filters
+- Auth pages (register/login/logout)
 - Personal list page
+- Shared layout (header, nav, ad placeholders)
 
 ### 18-24h: polish + demo
 

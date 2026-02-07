@@ -43,7 +43,7 @@ const PANEL_LABELS = ["Now tracking", "In progress", "Next up"];
 export default async function HomePage() {
   const items = await fetchMediaItems();
   return (
-    <main className="hero">
+    <section className="hero">
       <section className="hero__content">
         <p className="hero__eyebrow">Private alpha MVP</p>
         <h1 className="hero__title">OmniMediaTrak</h1>
@@ -72,6 +72,6 @@ export default async function HomePage() {
           </div>
         ))}
       </section>
-    </main>
+    </section>
   );
 }

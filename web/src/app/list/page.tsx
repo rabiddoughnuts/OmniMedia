@@ -53,7 +53,7 @@ export default function ListPage() {
   }, []);
 
   return (
-    <main className="page">
+    <section className="page">
       <header className="page__header">
         <div>
           <p className="page__eyebrow">Your list</p>
@@ -72,29 +72,104 @@ export default function ListPage() {
       )}
 
       {status === "idle" && items.length > 0 && (
-        <section className="list-grid">
-          {items.map((item) => (
-            <article key={item.id} className="list-card">
-              <div className="catalog-cover">
-                <Image
-                  src={item.cover_url ?? "/images/cover-placeholder.svg"}
-                  alt={item.title}
-                  width={180}
-                  height={270}
-                  className="catalog-cover__img"
-                />
+        <>
+          <div className="controls-bar">
+            <div className="control-group filter-group">
+              <div className="filter-dropdown">
+                <button type="button" id="filterToggle" aria-expanded="false">
+                  Filters
+                </button>
+                <div className="filter-menu" id="filterMenu" hidden>
+                  <div className="filter-pane">
+                    <p className="menu-label">Columns</p>
+                    <ul id="filterColumnsList" className="filter-list">
+                      <li className="muted">Status</li>
+                      <li>Rating</li>
+                      <li>Type</li>
+                    </ul>
+                  </div>
+                  <div className="filter-pane">
+                    <p className="menu-label">Values</p>
+                    <ul id="filterValuesList" className="filter-list">
+                      <li className="muted">Choose a column</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
-              <div className="catalog-body">
-                <p className="catalog-type">{item.type}</p>
-                <h2 className="catalog-title">{item.title}</h2>
-                <p className="list-meta">Status: {item.status}</p>
-                {item.rating && <p className="list-meta">Rating: {item.rating}/10</p>}
-                {item.notes && <p className="catalog-desc">{item.notes}</p>}
+              <div className="filter-status">
+                <span id="filterBadge">No filter applied</span>
+                <button type="button" id="clearFilter" className="link-button" hidden>
+                  Clear
+                </button>
               </div>
-            </article>
-          ))}
-        </section>
+            </div>
+
+            <div className="control-group">
+              <div className="columns-dropdown">
+                <button type="button" id="columnsToggle" aria-expanded="false">
+                  Columns
+                </button>
+                <div className="columns-menu" id="columnsMenu" hidden>
+                  <div id="columnsOptions" className="columns-options">
+                    <label>
+                      <input type="checkbox" defaultChecked /> Title
+                    </label>
+                    <label>
+                      <input type="checkbox" defaultChecked /> Status
+                    </label>
+                    <label>
+                      <input type="checkbox" /> Rating
+                    </label>
+                    <label>
+                      <input type="checkbox" /> Notes
+                    </label>
+                  </div>
+                  <p className="columns-hint">Select up to 4 columns.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="control-group">
+              <input type="text" id="searchBox" placeholder="Search titles, genres, tags..." />
+            </div>
+          </div>
+
+          <div className="table-container">
+            <table className="media-table">
+              <thead>
+                <tr>
+                  <th>Cover</th>
+                  <th>Title</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Rating</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <Image
+                        src={item.cover_url ?? "/images/cover-placeholder.svg"}
+                        alt={item.title}
+                        width={60}
+                        height={90}
+                        className="catalog-cover__img"
+                      />
+                    </td>
+                    <td>{item.title}</td>
+                    <td>{item.type}</td>
+                    <td>{item.status}</td>
+                    <td>{item.rating ?? ""}</td>
+                    <td>{item.notes ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-    </main>
+    </section>
   );
 }

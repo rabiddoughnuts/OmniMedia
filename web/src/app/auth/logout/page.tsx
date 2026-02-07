@@ -39,7 +39,7 @@ export default function LogoutPage() {
   }
 
   return (
-    <main className="page">
+    <section className="page">
       <header className="page__header">
         <div>
           <p className="page__eyebrow">Session</p>
@@ -63,6 +63,6 @@ export default function LogoutPage() {
           Ready to sign in again? <a href="/auth/login">Go to login</a>
         </p>
       </section>
-    </main>
+    </section>
   );
 }
