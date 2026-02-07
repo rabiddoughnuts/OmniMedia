@@ -14,7 +14,7 @@ export async function mediaRoutes(
     return { items: mediaItems };
   });
 
-  app.get("/:id", async (request, reply) => {
+  app.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const item = mediaItems.find((entry) => entry.id === request.params.id);
     if (!item) {
       reply.code(404);

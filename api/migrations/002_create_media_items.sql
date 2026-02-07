@@ -6,7 +6,7 @@ CREATE TABLE media_items (
   type VARCHAR(50) NOT NULL,
   cover_url TEXT,
   description TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb,
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
