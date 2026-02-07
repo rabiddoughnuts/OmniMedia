@@ -1,9 +1,13 @@
 import "dotenv/config";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
+import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import session from "@fastify/session";
 import { mediaRoutes } from "./routes/media.js";
 import { authRoutes } from "./routes/auth.js";
+import { listRoutes } from "./routes/list.js";
 
 export type AppConfig = {
   port: number;
@@ -22,13 +26,40 @@ export function loadConfig(): AppConfig {
   };
 }
 
-export function createServer() {
+function parseBoolean(value?: string): boolean {
+  if (!value) {
+    return false;
+  }
+  return value === "true" || value === "1" || value === "yes";
+}
+
+export async function createServer() {
   const config = loadConfig();
-  const app = Fastify({ logger: true });
+  const app = Fastify({
+    logger: true,
+    trustProxy: parseBoolean(process.env.TRUST_PROXY),
+  });
+
+  const corsOrigin = process.env.CORS_ORIGIN ?? "http://localhost:3000";
+  const corsOrigins = corsOrigin.split(",").map((origin) => origin.trim());
+
+  await app.register(cors, {
+    origin: corsOrigins,
+    credentials: true,
+  });
+
+  await app.register(helmet, {
+    contentSecurityPolicy: false,
+  });
+
+  await app.register(rateLimit, {
+    max: 200,
+    timeWindow: "1 minute",
+  });
 
   // Register cookie and session plugins
-  app.register(cookie);
-  app.register(session, {
+  await app.register(cookie);
+  await app.register(session, {
     secret: config.sessionSecret,
     cookie: {
       secure: process.env.NODE_ENV === "production",
@@ -41,15 +72,16 @@ export function createServer() {
     return { status: "ok" };
   });
 
-  app.register(authRoutes, { prefix: "/auth" });
-  app.register(mediaRoutes, { prefix: "/media" });
+  await app.register(authRoutes, { prefix: "/auth" });
+  await app.register(mediaRoutes, { prefix: "/media" });
+  await app.register(listRoutes, { prefix: "/list" });
 
   return app;
 }
 
 async function main() {
   const config = loadConfig();
-  const app = createServer();
+  const app = await createServer();
 
   try {
     await app.listen({ port: config.port, host: "0.0.0.0" });

@@ -1,9 +1,21 @@
 import "dotenv/config";
-import type { FastifyInstance, FastifyPluginOptions, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions } from "fastify";
 import bcrypt from "bcrypt";
 import { getDb } from "../db.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const SALT_ROUNDS = 10;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_EMAIL_LENGTH = 254;
+const MIN_PASSWORD_LENGTH = 8;
+const AUTH_RATE_LIMIT = {
+  max: 10,
+  timeWindow: "1 minute",
+};
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 interface RegisterBody {
   email: string;
@@ -20,15 +32,24 @@ export async function authRoutes(
   _opts: FastifyPluginOptions
 ) {
   // Register
-  app.post<{ Body: RegisterBody }>("/register", async (request, reply) => {
-    const { email, password } = request.body;
+  app.post<{ Body: RegisterBody }>(
+    "/register",
+    { config: { rateLimit: AUTH_RATE_LIMIT } },
+    async (request, reply) => {
+      const { email, password } = request.body;
 
     if (!email || !password) {
       reply.code(400);
       return { error: "Email and password are required" };
     }
 
-    if (password.length < 8) {
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(normalizedEmail)) {
+      reply.code(400);
+      return { error: "Invalid email address" };
+    }
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
       reply.code(400);
       return { error: "Password must be at least 8 characters" };
     }
@@ -38,7 +59,7 @@ export async function authRoutes(
     // Check if user exists
     const { rows: existing } = await db.query(
       "SELECT id FROM users WHERE email = $1",
-      [email]
+      [normalizedEmail]
     );
 
     if (existing.length > 0) {
@@ -54,7 +75,7 @@ export async function authRoutes(
       `INSERT INTO users (email, password_hash)
        VALUES ($1, $2)
        RETURNING id, email, created_at`,
-      [email, passwordHash]
+      [normalizedEmail, passwordHash]
     );
 
     const user = rows[0];
@@ -69,22 +90,32 @@ export async function authRoutes(
         createdAt: user.created_at,
       },
     };
-  });
+    }
+  );
 
   // Login
-  app.post<{ Body: LoginBody }>("/login", async (request, reply) => {
-    const { email, password } = request.body;
+  app.post<{ Body: LoginBody }>(
+    "/login",
+    { config: { rateLimit: AUTH_RATE_LIMIT } },
+    async (request, reply) => {
+      const { email, password } = request.body;
 
     if (!email || !password) {
       reply.code(400);
       return { error: "Email and password are required" };
     }
 
+    const normalizedEmail = normalizeEmail(email);
+    if (normalizedEmail.length > MAX_EMAIL_LENGTH || !EMAIL_REGEX.test(normalizedEmail)) {
+      reply.code(400);
+      return { error: "Invalid email address" };
+    }
+
     const db = getDb();
 
     const { rows } = await db.query(
       "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
-      [email]
+      [normalizedEmail]
     );
 
     if (rows.length === 0) {
@@ -112,21 +143,17 @@ export async function authRoutes(
         createdAt: user.created_at,
       },
     };
-  });
+    }
+  );
 
   // Logout
   app.post("/logout", async (request, reply) => {
-    request.session.delete();
+    await request.session.destroy();
     return { success: true };
   });
 
   // Get current user
-  app.get("/me", async (request, reply) => {
-    if (!request.session.userId) {
-      reply.code(401);
-      return { error: "Not authenticated" };
-    }
-
+  app.get("/me", { preHandler: requireAuth }, async (request, reply) => {
     const db = getDb();
 
     const { rows } = await db.query(

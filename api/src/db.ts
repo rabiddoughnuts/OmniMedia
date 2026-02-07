@@ -2,6 +2,9 @@ import { Pool } from "pg";
 
 export type DbConfig = {
   connectionString: string;
+  max: number;
+  idleTimeoutMillis: number;
+  connectionTimeoutMillis: number;
 };
 
 let pool: Pool | null = null;
@@ -11,13 +14,27 @@ export function getDbConfig(): DbConfig {
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
   }
-  return { connectionString };
+  const max = Number(process.env.DB_POOL_MAX ?? 10);
+  const idleTimeoutMillis = Number(process.env.DB_IDLE_TIMEOUT_MS ?? 30000);
+  const connectionTimeoutMillis = Number(process.env.DB_CONN_TIMEOUT_MS ?? 5000);
+
+  return {
+    connectionString,
+    max,
+    idleTimeoutMillis,
+    connectionTimeoutMillis,
+  };
 }
 
 export function getDb(): Pool {
   if (!pool) {
     const config = getDbConfig();
-    pool = new Pool({ connectionString: config.connectionString });
+    pool = new Pool({
+      connectionString: config.connectionString,
+      max: config.max,
+      idleTimeoutMillis: config.idleTimeoutMillis,
+      connectionTimeoutMillis: config.connectionTimeoutMillis,
+    });
   }
   return pool;
 }

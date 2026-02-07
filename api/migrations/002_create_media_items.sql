@@ -13,6 +13,7 @@ CREATE TABLE media_items (
 
 CREATE INDEX idx_media_items_type ON media_items(type);
 CREATE INDEX idx_media_items_title ON media_items(title);
+CREATE INDEX idx_media_items_external_id ON media_items(external_id);
 
 -- Down Migration
 DROP TABLE IF EXISTS media_items;

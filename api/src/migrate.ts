@@ -38,9 +38,16 @@ async function runMigrations() {
       
       // Extract up migration (before "-- Down Migration")
       const upMigration = content.split("-- Down Migration")[0];
-      
-      await db.query(upMigration);
-      await db.query("INSERT INTO migrations (name) VALUES ($1)", [file]);
+
+      await db.query("BEGIN");
+      try {
+        await db.query(upMigration);
+        await db.query("INSERT INTO migrations (name) VALUES ($1)", [file]);
+        await db.query("COMMIT");
+      } catch (migrationError) {
+        await db.query("ROLLBACK");
+        throw migrationError;
+      }
       console.log(`✓ Applied ${file}`);
     } else {
       console.log(`✓ Already applied: ${file}`);

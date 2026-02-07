@@ -15,6 +15,17 @@ Repository started during Wright State Hackathon 2026, for a multi-media all in 
 docker compose up -d
 ```
 
+If you do not have Docker Compose, you can use a native install:
+
+```bash
+sudo pacman -S postgresql
+sudo -u postgres initdb -D /var/lib/postgres/data
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+sudo -u postgres createdb omnimediatrak
+sudo -u postgres psql -d omnimediatrak -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
+```
+
 ### 2. Set up the database
 
 ```bash
@@ -38,3 +49,27 @@ npm run dev
 
 **API:** http://localhost:3001
 **Web:** http://localhost:3000
+
+## Quick API check (curl)
+
+Register:
+
+```bash
+curl -i -X POST http://localhost:3001/auth/register \
+	-H "Content-Type: application/json" \
+	-d '{"email":"test@example.com","password":"password123"}'
+```
+
+Login (save cookies):
+
+```bash
+curl -i -c cookies.txt -X POST http://localhost:3001/auth/login \
+	-H "Content-Type: application/json" \
+	-d '{"email":"test@example.com","password":"password123"}'
+```
+
+List (authenticated):
+
+```bash
+curl -i -b cookies.txt http://localhost:3001/list
+```

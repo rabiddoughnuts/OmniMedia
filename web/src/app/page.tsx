@@ -1,4 +1,47 @@
-export default function HomePage() {
+type MediaItem = {
+  id: string;
+  title: string;
+  type: string;
+  description?: string | null;
+};
+
+type MediaResponse = {
+  items: MediaItem[];
+};
+
+const FALLBACK_ITEMS: MediaItem[] = [
+  { id: "fallback-1", title: "Skyward Signals", type: "anime" },
+  { id: "fallback-2", title: "The Memory Library", type: "book" },
+  { id: "fallback-3", title: "Echoes of Orion", type: "game" },
+];
+
+async function fetchMediaItems(): Promise<MediaItem[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+
+  try {
+    const response = await fetch(`${baseUrl}/media?page=1&pageSize=3`, {
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) {
+      return FALLBACK_ITEMS;
+    }
+
+    const data = (await response.json()) as MediaResponse;
+    if (!Array.isArray(data.items) || data.items.length === 0) {
+      return FALLBACK_ITEMS;
+    }
+
+    return data.items.slice(0, 3);
+  } catch {
+    return FALLBACK_ITEMS;
+  }
+}
+
+const PANEL_LABELS = ["Now tracking", "In progress", "Next up"];
+
+export default async function HomePage() {
+  const items = await fetchMediaItems();
   return (
     <main className="hero">
       <section className="hero__content">
@@ -9,26 +52,25 @@ export default function HomePage() {
           discovery and calm, focused lists.
         </p>
         <div className="hero__actions">
-          <button className="button button--primary">Create account</button>
-          <button className="button button--ghost">Browse catalog</button>
+          <a className="button button--primary" href="/auth/register">
+            Create account
+          </a>
+          <a className="button button--ghost" href="/catalog">
+            Browse catalog
+          </a>
         </div>
       </section>
       <section className="hero__panel">
-        <div className="panel__card panel__card--accent">
-          <p className="panel__label">Now tracking</p>
-          <p className="panel__title">Skyward Signals</p>
-          <p className="panel__meta">Anime · 24 episodes</p>
-        </div>
-        <div className="panel__card">
-          <p className="panel__label">In progress</p>
-          <p className="panel__title">The Memory Library</p>
-          <p className="panel__meta">Book · 62% read</p>
-        </div>
-        <div className="panel__card">
-          <p className="panel__label">Next up</p>
-          <p className="panel__title">Echoes of Orion</p>
-          <p className="panel__meta">Game · 18 hours</p>
-        </div>
+        {items.map((item, index) => (
+          <div
+            key={item.id}
+            className={index === 0 ? "panel__card panel__card--accent" : "panel__card"}
+          >
+            <p className="panel__label">{PANEL_LABELS[index] ?? "On deck"}</p>
+            <p className="panel__title">{item.title}</p>
+            <p className="panel__meta">{item.type}</p>
+          </div>
+        ))}
       </section>
     </main>
   );

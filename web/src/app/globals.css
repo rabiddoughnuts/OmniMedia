@@ -1,7 +1,24 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap");
+@font-face {
+  font-family: "Space Grotesk";
+  src: local("Space Grotesk"),
+    url("/fonts/SpaceGrotesk-Variable.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Fraunces";
+  src: local("Fraunces"), url("/fonts/Fraunces-Variable.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   color-scheme: light;
+  --font-sans: "Space Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "Fraunces", "Times New Roman", serif;
   --ink: #0f172a;
   --muted: #475569;
   --accent: #f97316;
@@ -21,8 +38,175 @@ body {
   background: radial-gradient(circle at top left, #fde68a, transparent 55%),
     radial-gradient(circle at 20% 80%, #bae6fd, transparent 50%),
     #f8fafc;
-  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3.5rem 6vw 5rem;
+}
+
+.page__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+}
+
+.page__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 0.8rem;
+}
+
+.page__title {
+  font-family: var(--font-serif);
+  font-size: clamp(2.2rem, 3.4vw, 3.5rem);
+  margin: 0 0 0.75rem;
+}
+
+.page__subtitle {
+  color: var(--muted);
+  margin: 0;
+  max-width: 480px;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 2.5rem;
+}
+
+.filter-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.filter-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.catalog-grid {
+  display: grid;
+  gap: 1.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.catalog-card {
+  background: var(--surface);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.catalog-cover {
+  background: linear-gradient(160deg, #e2e8f0, #f8fafc 55%);
+  padding: 1rem;
+  display: grid;
+  place-items: center;
+}
+
+.catalog-cover__img {
+  border-radius: 16px;
+  height: auto;
+}
+
+.catalog-cover__placeholder {
+  height: 240px;
+  width: 160px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.7);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.catalog-body {
+  padding: 1.25rem 1.4rem 1.5rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.catalog-type {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.catalog-title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.catalog-desc {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.form-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  max-width: 520px;
+}
+
+.form {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.input {
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  padding: 0.75rem 0.9rem;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+.input:focus {
+  outline: 2px solid rgba(249, 115, 22, 0.4);
+  border-color: rgba(249, 115, 22, 0.6);
+}
+
+.helper {
+  margin-top: 1.25rem;
+  color: var(--muted);
+}
+
+.helper.success {
+  color: #15803d;
+}
+
+.helper.error {
+  color: #b91c1c;
 }
 
 .hero {
@@ -48,7 +232,7 @@ body {
 }
 
 .hero__title {
-  font-family: "Fraunces", "Times New Roman", serif;
+  font-family: var(--font-serif);
   font-size: clamp(2.8rem, 4vw, 4.2rem);
   margin: 0 0 1rem;
 }
@@ -161,8 +345,23 @@ body {
     padding: 3rem 6vw 4rem;
   }
 
+  .page {
+    padding: 3rem 6vw 4rem;
+  }
+
   .hero__actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__content,
+  .hero__panel {
+    animation: none;
+  }
+
+  .button {
+    transition: none;
   }
 }
