@@ -1,4 +1,6 @@
 import "dotenv/config";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { closeDb, getDb } from "./db.js";
 
 const mediaItems = [
@@ -84,8 +86,168 @@ const mediaItems = [
   },
 ];
 
+type ImportFile = {
+  fileName: string;
+  rootKey: string;
+  mediaType: string;
+};
+
+type ImportItem = {
+  external_id: string;
+  title: string;
+  media_type: string;
+  media_class: string;
+  cover_url: string | null;
+  description: string | null;
+  country_of_origin: string | null;
+  release_date: string | null;
+  creators: string[] | null;
+  attributes: Record<string, unknown>;
+};
+
+const importFiles: ImportFile[] = [
+  { fileName: "Anime.json", rootKey: "Anime", mediaType: "anime" },
+  { fileName: "Audiobooks.json", rootKey: "Audiobooks", mediaType: "audiobooks" },
+  { fileName: "Books.json", rootKey: "Books", mediaType: "books" },
+  { fileName: "Comics.json", rootKey: "Comics", mediaType: "comics" },
+  { fileName: "Games.json", rootKey: "Games", mediaType: "games" },
+  { fileName: "LightNovels.json", rootKey: "LightNovels", mediaType: "lightnovels" },
+  { fileName: "LiveEvents.json", rootKey: "LiveEvents", mediaType: "liveevents" },
+  { fileName: "Manga.json", rootKey: "Manga", mediaType: "manga" },
+  { fileName: "Movies.json", rootKey: "Movies", mediaType: "movies" },
+  { fileName: "Music.json", rootKey: "Music", mediaType: "music" },
+  { fileName: "Podcasts.json", rootKey: "Podcasts", mediaType: "podcasts" },
+  { fileName: "Shows.json", rootKey: "Shows", mediaType: "shows" },
+  { fileName: "VisualNovels.json", rootKey: "VisualNovels", mediaType: "visualnovels" },
+  { fileName: "WebNovels.json", rootKey: "WebNovels", mediaType: "webnovels" },
+  { fileName: "Webseries.json", rootKey: "Webseries", mediaType: "webseries" },
+  { fileName: "Webtoons.json", rootKey: "Webtoons", mediaType: "webtoons" },
+];
+
 function toLtreeLabel(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+}
+
+function slugifyForId(value: string): string {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "untitled";
+}
+
+function normalizeCreator(value: unknown): string[] | null {
+  if (typeof value === "string" && value.trim()) {
+    return [value.trim()];
+  }
+  if (Array.isArray(value)) {
+    const entries = value.filter((item) => typeof item === "string") as string[];
+    return entries.length ? entries : null;
+  }
+  return null;
+}
+
+function normalizeReleaseDate(value: unknown): string | null {
+  const year = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(year)) {
+    return null;
+  }
+  return `${Math.trunc(year)}-01-01`;
+}
+
+function buildExternalId(
+  mediaType: string,
+  title: string,
+  seen: Map<string, number>
+): string {
+  const base = `${mediaType}:${slugifyForId(title)}`;
+  const current = seen.get(base) ?? 0;
+  const next = current + 1;
+  seen.set(base, next);
+  return current === 0 ? base : `${base}-${next}`;
+}
+
+function toImportItem(
+  raw: Record<string, unknown>,
+  mediaType: string,
+  seenExternalIds: Map<string, number>
+): ImportItem | null {
+  const rawTitle = raw.title;
+  if (typeof rawTitle !== "string" || !rawTitle.trim()) {
+    return null;
+  }
+
+  const title = rawTitle.trim();
+  const description = typeof raw.synopsis === "string" ? raw.synopsis.trim() : null;
+  const country =
+    typeof raw.country_of_origin === "string" ? raw.country_of_origin.trim() : null;
+  const releaseDate = normalizeReleaseDate(raw.year_of_release);
+  const creators = normalizeCreator(raw.creator);
+  const externalId = buildExternalId(mediaType, title, seenExternalIds);
+
+  const attributes: Record<string, unknown> = { ...raw };
+  delete attributes.title;
+  delete attributes.synopsis;
+  delete attributes.country_of_origin;
+  delete attributes.year_of_release;
+  delete attributes.creator;
+
+  return {
+    external_id: externalId,
+    title,
+    media_type: mediaType,
+    media_class: `media.${toLtreeLabel(mediaType)}`,
+    cover_url: null,
+    description,
+    country_of_origin: country,
+    release_date: releaseDate,
+    creators,
+    attributes,
+  };
+}
+
+async function loadImportItems(importDir: string): Promise<ImportItem[]> {
+  const seenExternalIds = new Map<string, number>();
+  const items: ImportItem[] = [];
+
+  for (const file of importFiles) {
+    const filePath = path.join(importDir, file.fileName);
+    let content: string;
+    try {
+      content = await fs.readFile(filePath, "utf-8");
+    } catch (error) {
+      throw new Error(`Failed to read ${filePath}. Set MEDIA_IMPORT_DIR to the data folder.`);
+    }
+
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(content) as Record<string, unknown>;
+    } catch (error) {
+      throw new Error(`Failed to parse ${filePath}. Ensure the JSON is valid.`);
+    }
+
+    const rawList = parsed[file.rootKey];
+    if (!Array.isArray(rawList)) {
+      throw new Error(`Expected ${file.rootKey} array in ${file.fileName}.`);
+    }
+
+    for (const rawItem of rawList) {
+      if (typeof rawItem !== "object" || rawItem === null) {
+        continue;
+      }
+      const normalized = toImportItem(
+        rawItem as Record<string, unknown>,
+        file.mediaType,
+        seenExternalIds
+      );
+      if (normalized) {
+        items.push(normalized);
+      }
+    }
+  }
+
+  return items;
 }
 
 async function seed() {
@@ -118,6 +280,45 @@ async function seed() {
      ON CONFLICT (external_id) DO NOTHING`,
     params
   );
+
+  const importDir = process.env.MEDIA_IMPORT_DIR?.trim();
+  if (!importDir) {
+    console.log("No MEDIA_IMPORT_DIR set; skipping JSON import.");
+  } else {
+    const importItems = await loadImportItems(importDir);
+    if (importItems.length) {
+      const importValues: string[] = [];
+      const importParams: Array<string | string[] | null | Record<string, unknown>> = [];
+
+      importItems.forEach((item, index) => {
+        const baseIndex = index * 10;
+        importValues.push(
+          `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8}, $${baseIndex + 9}, $${baseIndex + 10})`
+        );
+        importParams.push(
+          item.external_id,
+          item.title,
+          item.media_type,
+          item.media_class,
+          item.cover_url,
+          item.description,
+          item.country_of_origin,
+          item.release_date,
+          item.creators,
+          item.attributes
+        );
+      });
+
+      await db.query(
+        `INSERT INTO media.media
+          (external_id, title, media_type, media_class, cover_url, description, country_of_origin, release_date, creators, attributes)
+         VALUES ${importValues.join(", ")}
+         ON CONFLICT (external_id) DO NOTHING`,
+        importParams
+      );
+      console.log(`Imported ${importItems.length} records from ${importDir}.`);
+    }
+  }
 
   await closeDb();
   console.log("\n✓ Seed complete!");

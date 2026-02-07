@@ -95,39 +95,6 @@ export default async function CatalogPage({
         </div>
       </header>
 
-      <form className="filter-bar" action="/catalog" method="get">
-        <div className="filter-group">
-          <label className="filter-label" htmlFor="q">
-            Search
-          </label>
-          <input
-            id="q"
-            name="q"
-            className="input"
-            placeholder="Search titles"
-            defaultValue={q}
-          />
-        </div>
-        <div className="filter-group">
-          <label className="filter-label" htmlFor="type">
-            Type
-          </label>
-          <select id="type" name="type" className="input" defaultValue={type}>
-            {TYPE_OPTIONS.map((option) => (
-              <option key={option || "all"} value={option}>
-                {option ? option : "All"}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button className="button button--primary" type="submit">
-          Apply
-        </button>
-        <a className="button button--ghost" href="/catalog">
-          Reset
-        </a>
-      </form>
-
       <CatalogTable items={items} />
     </section>
   );
