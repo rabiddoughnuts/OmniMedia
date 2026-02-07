@@ -1,3 +1,5 @@
+# Backlog of Implementation for OmniMediaTrak
+
 ## Priority 0 - Validation + core UX
 
 - UI: list status UI (status/rating/notes edits)
@@ -139,7 +141,6 @@ CREATE TABLE media.external_links (
     PRIMARY KEY (source_name, external_key)
 );
 
-
 Purpose:
 
 De-duplicate media across ingestion sources
@@ -152,7 +153,6 @@ users schema - Identity & Profile
 users.users
 users.preferences
 users.settings
-
 
 Contains only user identity and configuration data.
 
@@ -172,7 +172,6 @@ CREATE TABLE interaction.user_media (
     meta_snapshot JSONB,
     PRIMARY KEY (user_id, media_id)
 ) PARTITION BY HASH (user_id);
-
 
 Characteristics:
 
@@ -201,14 +200,12 @@ interaction.smart_lists (
     filter_definition JSONB
 )
 
-
 Smart lists are evaluated at runtime and cached, avoiding duplication and stale data.
 
 auth schema — Authentication
 auth.sessions
 auth.tokens
 auth.login_events
-
 
 Isolated for security and auditing.
 
@@ -217,7 +214,6 @@ ingest.sources
 ingest.import_jobs
 ingest.import_logs
 ingest.conflicts
-
 
 Used exclusively by backend ingestion services.
 
