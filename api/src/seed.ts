@@ -156,12 +156,52 @@ function normalizeReleaseDate(value: unknown): string | null {
   return `${Math.trunc(year)}-01-01`;
 }
 
+function normalizeYearForId(value: unknown): string | null {
+  const year = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(year)) {
+    return null;
+  }
+  return String(Math.trunc(year));
+}
+
+function normalizeCreatorForId(value: unknown): string | null {
+  let source: string | null = null;
+  if (typeof value === "string") {
+    source = value;
+  } else if (Array.isArray(value) && typeof value[0] === "string") {
+    source = value[0];
+  }
+
+  if (!source) {
+    return null;
+  }
+
+  const trimmed = source.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const afterColon = trimmed.includes(":") ? trimmed.split(":").slice(1).join(":") : trimmed;
+  const firstSegment = afterColon.split(",")[0] ?? afterColon;
+  const normalized = slugifyForId(firstSegment.trim());
+  return normalized || null;
+}
+
 function buildExternalId(
   mediaType: string,
   title: string,
+  year: string | null,
+  creatorSlug: string | null,
   seen: Map<string, number>
 ): string {
-  const base = `${mediaType}:${slugifyForId(title)}`;
+  const parts = [mediaType, slugifyForId(title)];
+  if (year) {
+    parts.push(year);
+  }
+  if (creatorSlug) {
+    parts.push(creatorSlug);
+  }
+  const base = parts.join(":");
   const current = seen.get(base) ?? 0;
   const next = current + 1;
   seen.set(base, next);
@@ -184,7 +224,9 @@ function toImportItem(
     typeof raw.country_of_origin === "string" ? raw.country_of_origin.trim() : null;
   const releaseDate = normalizeReleaseDate(raw.year_of_release);
   const creators = normalizeCreator(raw.creator);
-  const externalId = buildExternalId(mediaType, title, seenExternalIds);
+  const yearForId = normalizeYearForId(raw.year_of_release);
+  const creatorSlug = normalizeCreatorForId(raw.creator);
+  const externalId = buildExternalId(mediaType, title, yearForId, creatorSlug, seenExternalIds);
 
   const attributes: Record<string, unknown> = { ...raw };
   delete attributes.title;
@@ -254,7 +296,7 @@ async function seed() {
   const db = getDb();
 
   const values: string[] = [];
-  const params: Array<string | number | null> = [];
+  const params: Array<string | number | null | Record<string, unknown>> = [];
 
   mediaItems.forEach((item, index) => {
     const baseIndex = index * 8;

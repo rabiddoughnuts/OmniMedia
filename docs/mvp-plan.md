@@ -2,6 +2,8 @@
 
 **Goal:** ship a private-alpha, end-to-end slice: browse catalog + sign in + add to list.
 
+This is a living plan for the current MVP milestone.
+
 ## MVP Scope (Phase 0 subset)
 
 ### Must-have user flows

@@ -7,6 +7,13 @@ Repository started during Wright State Hackathon 2026, for a multi-media all in 
 - web/: Next.js app
 - api/: Fastify API
 
+## Documentation
+
+- Docs index: [docs/index.md](docs/index.md)
+- Proposal synopsis: [docs/proposal.md](docs/proposal.md)
+- MVP plan: [docs/mvp-plan.md](docs/mvp-plan.md)
+- Database plan: [docs/database.md](docs/database.md)
+
 ## Assets
 
 Fonts are self-hosted in [web/public/fonts](web/public/fonts):
@@ -19,6 +26,20 @@ If you only have TTF files, either convert them to WOFF2 or update the
 to the .ttf files.
 
 ## Quick start
+
+### 0. Install dependencies
+
+```bash
+cd packages/shared
+npm install
+npm run build
+
+cd ../../api
+npm install
+
+cd ../web
+npm install
+```
 
 ### 1. Start Postgres
 

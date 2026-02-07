@@ -73,14 +73,28 @@ export async function listRoutes(
         um.media_id AS id,
         um.media_id,
         um.status,
+        um.progress,
         um.rating,
         um.notes,
+        um.started_at,
+        um.completed_at,
+        um.meta_snapshot,
         um.created_at,
         um.updated_at,
+        m.id AS media_row_id,
+        m.external_id,
         m.title,
         m.media_type AS type,
+        m.media_class,
+        m.release_date,
+        m.country_of_origin,
+        m.creators,
         m.cover_url,
-        m.description
+        m.description,
+        m.attributes,
+        m.search_vector,
+        m.created_at AS media_created_at,
+        m.updated_at AS media_updated_at
        FROM interaction.user_media um
        JOIN media.media m ON um.media_id = m.id
        WHERE um.user_id = $1

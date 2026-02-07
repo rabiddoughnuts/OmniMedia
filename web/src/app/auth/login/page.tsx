@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type FormState = {
   email: string;
@@ -16,6 +17,8 @@ export default function LoginPage() {
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,8 +40,10 @@ export default function LoginPage() {
         throw new Error(data.error ?? "Login failed");
       }
 
+      const nextPath = searchParams.get("next") ?? "/";
       setFeedback({ type: "success", message: "Signed in. Welcome back!" });
       setForm({ email: "", password: "" });
+      router.push(nextPath);
     } catch (error) {
       setFeedback({
         type: "error",
@@ -104,7 +109,10 @@ export default function LoginPage() {
         )}
 
         <p className="helper">
-          New here? <a href="/auth/register">Create an account</a>
+          New here?{" "}
+          <a href={`/auth/register?next=${encodeURIComponent(searchParams.get("next") ?? "/")}`}>
+            Create an account
+          </a>
         </p>
       </section>
     </section>

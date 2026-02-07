@@ -1,31 +1,37 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
-const MEDIA_TYPES = [
-  "Shows",
-  "Anime",
-  "Webseries/YT",
-  "Movies",
-  "Books",
-  "Light Novels",
-  "Web Novels",
-  "Audiobooks",
-  "Manga",
-  "Comics",
-  "Webtoons",
-  "Games",
-  "Visual Novels",
-  "Podcasts",
-  "Music",
-  "Live Events",
+const MEDIA_TYPES: Array<{ label: string; value: string | null }> = [
+  { label: "All", value: null },
+  { label: "Shows", value: "show" },
+  { label: "Anime", value: "anime" },
+  { label: "Webseries/YT", value: "webseries" },
+  { label: "Movies", value: "movie" },
+  { label: "Books", value: "book" },
+  { label: "Light Novels", value: "lightnovel" },
+  { label: "Web Novels", value: "webnovel" },
+  { label: "Audiobooks", value: "audiobook" },
+  { label: "Manga", value: "manga" },
+  { label: "Comics", value: "comic" },
+  { label: "Webtoons", value: "webtoon" },
+  { label: "Games", value: "game" },
+  { label: "Visual Novels", value: "visualnovel" },
+  { label: "Podcasts", value: "podcast" },
+  { label: "Music", value: "music" },
+  { label: "Live Events", value: "liveevent" },
 ];
 
 export default function LeftSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const showMediaTypes = pathname.startsWith("/catalog") || pathname.startsWith("/list");
-  const [activeType, setActiveType] = useState(MEDIA_TYPES[0]);
+  const activeType = useMemo(
+    () => searchParams.get("type"),
+    [searchParams]
+  );
 
   if (!showMediaTypes) {
     return (
@@ -37,15 +43,24 @@ export default function LeftSidebar() {
 
   return (
     <ul className="media-type-buttons" aria-label="Media type navigation">
-      {MEDIA_TYPES.map((label) => (
-        <li key={label}>
+      {MEDIA_TYPES.map((item) => (
+        <li key={item.label}>
           <button
             type="button"
-            className={label === activeType ? "active" : ""}
-            onClick={() => setActiveType(label)}
-            aria-pressed={label === activeType}
+            className={item.value === activeType ? "active" : ""}
+            onClick={() => {
+              const next = new URLSearchParams(searchParams.toString());
+              if (item.value) {
+                next.set("type", item.value);
+              } else {
+                next.delete("type");
+              }
+              const queryString = next.toString();
+              router.push(queryString ? `${pathname}?${queryString}` : pathname);
+            }}
+            aria-pressed={item.value === activeType}
           >
-            {label}
+            {item.label}
           </button>
         </li>
       ))}

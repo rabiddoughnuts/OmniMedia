@@ -5,10 +5,19 @@ import Image from "next/image";
 
 type MediaItem = {
   id: string;
+  external_id: string | null;
   title: string;
   type: string;
+  media_class: string;
+  release_date: string | null;
+  country_of_origin: string | null;
+  creators: string[] | null;
   cover_url?: string | null;
   description?: string | null;
+  attributes: Record<string, unknown>;
+  search_vector: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 type ListResponse = {
@@ -19,14 +28,43 @@ type Props = {
   items: MediaItem[];
 };
 
-type ColumnKey = "cover" | "title" | "type" | "description";
+type ColumnKey =
+  | "cover"
+  | "title"
+  | "release_date"
+  | "country_of_origin"
+  | "creators"
+  | "description"
+  | "attributes"
+  | "search_vector";
+type SortKey = Exclude<ColumnKey, "cover">;
 
 const COLUMN_LABELS: Record<ColumnKey, string> = {
   cover: "Cover",
   title: "Title",
-  type: "Type",
+  release_date: "Release Date",
+  country_of_origin: "Country",
+  creators: "Creators",
   description: "Description",
+  attributes: "Attributes",
+  search_vector: "Search Vector",
 };
+
+function getColumnValue(item: MediaItem, key: ColumnKey): string {
+  if (key === "cover") {
+    return item.cover_url ?? "";
+  }
+  if (key === "description") {
+    return item.description ?? "";
+  }
+  if (key === "creators") {
+    return item.creators?.join(", ") ?? "";
+  }
+  if (key === "attributes") {
+    return JSON.stringify(item.attributes ?? {});
+  }
+  return String(item[key] ?? "");
+}
 
 export default function CatalogTable({ items }: Props) {
   const [listIds, setListIds] = useState<Set<string>>(new Set());
@@ -39,10 +77,12 @@ export default function CatalogTable({ items }: Props) {
   const [filterColumn, setFilterColumn] = useState<ColumnKey | null>(null);
   const [filterValue, setFilterValue] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [visibleColumns, setVisibleColumns] = useState<ColumnKey[]>([
     "cover",
     "title",
-    "type",
+    "release_date",
     "description",
   ]);
 
@@ -128,8 +168,7 @@ export default function CatalogTable({ items }: Props) {
     }
     const values = new Set<string>();
     items.forEach((item) => {
-      const raw = item[filterColumn] ?? "";
-      const normalized = String(raw).trim();
+      const normalized = getColumnValue(item, filterColumn).trim();
       if (normalized) {
         values.add(normalized);
       }
@@ -139,9 +178,17 @@ export default function CatalogTable({ items }: Props) {
 
   const filteredItems = useMemo(() => {
     const query = searchText.trim().toLowerCase();
-    return items.filter((item) => {
+    const filtered = items.filter((item) => {
       const matchesSearch = query
-        ? [item.title, item.type, item.description]
+        ? [
+            item.title,
+            item.description,
+            item.country_of_origin,
+            item.release_date,
+            item.creators?.join(", "),
+            item.search_vector,
+            JSON.stringify(item.attributes ?? {}),
+          ]
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(query))
         : true;
@@ -154,10 +201,20 @@ export default function CatalogTable({ items }: Props) {
         return true;
       }
 
-      const raw = item[filterColumn] ?? "";
-      return String(raw).trim() === filterValue;
+      return getColumnValue(item, filterColumn).trim() === filterValue;
     });
-  }, [items, searchText, filterColumn, filterValue]);
+    return filtered.sort((a, b) => {
+      const left = getColumnValue(a, sortKey).toLowerCase();
+      const right = getColumnValue(b, sortKey).toLowerCase();
+      if (left < right) {
+        return sortDirection === "asc" ? -1 : 1;
+      }
+      if (left > right) {
+        return sortDirection === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [items, searchText, filterColumn, filterValue, sortKey, sortDirection]);
 
   function toggleColumn(key: ColumnKey) {
     setVisibleColumns((prev) => {
@@ -168,9 +225,6 @@ export default function CatalogTable({ items }: Props) {
         }
         return prev.filter((col) => col !== key);
       }
-      if (prev.length >= 4) {
-        return prev;
-      }
       return [...prev, key];
     });
   }
@@ -180,81 +234,88 @@ export default function CatalogTable({ items }: Props) {
     setFilterValue(null);
   }
 
+  function handleSort(key: SortKey) {
+    setSortDirection((prev) => (sortKey === key ? (prev === "asc" ? "desc" : "asc") : "asc"));
+    setSortKey(key);
+  }
+
   return (
     <>
       <div className="controls-bar">
         <div className="control-group filter-group">
-          <div className="filter-dropdown">
-            <button
-              type="button"
-              id="filterToggle"
-              aria-expanded={isFilterOpen}
-              onClick={() => {
-                setIsFilterOpen((open) => !open);
-                setIsColumnsOpen(false);
-              }}
-            >
-              Filters
-            </button>
-            <div className="filter-menu" id="filterMenu" hidden={!isFilterOpen}>
-              <div className="filter-pane">
-                <p className="menu-label">Columns</p>
-                <ul id="filterColumnsList" className="filter-list">
-                  {(Object.keys(COLUMN_LABELS) as ColumnKey[]).map((key) => (
-                    <li key={key}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFilterColumn(key);
-                          setFilterValue(null);
-                        }}
-                      >
-                        {COLUMN_LABELS[key]}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="filter-pane">
-                <p className="menu-label">Values</p>
-                <ul id="filterValuesList" className="filter-list">
-                  {filterColumn ? (
-                    filterValues.length > 0 ? (
-                      filterValues.map((value) => (
-                        <li key={value}>
-                          <button
-                            type="button"
-                            onClick={() => setFilterValue(value)}
-                          >
-                            {value}
-                          </button>
-                        </li>
-                      ))
+          <div className="filter-row">
+            <div className="filter-dropdown">
+              <button
+                type="button"
+                id="filterToggle"
+                aria-expanded={isFilterOpen}
+                onClick={() => {
+                  setIsFilterOpen((open) => !open);
+                  setIsColumnsOpen(false);
+                }}
+              >
+                Filters
+              </button>
+              <div className="filter-menu" id="filterMenu" hidden={!isFilterOpen}>
+                <div className="filter-pane">
+                  <p className="menu-label">Columns</p>
+                  <ul id="filterColumnsList" className="filter-list">
+                    {(Object.keys(COLUMN_LABELS) as ColumnKey[]).map((key) => (
+                      <li key={key}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterColumn(key);
+                            setFilterValue(null);
+                          }}
+                        >
+                          {COLUMN_LABELS[key]}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="filter-pane">
+                  <p className="menu-label">Values</p>
+                  <ul id="filterValuesList" className="filter-list">
+                    {filterColumn ? (
+                      filterValues.length > 0 ? (
+                        filterValues.map((value) => (
+                          <li key={value}>
+                            <button
+                              type="button"
+                              onClick={() => setFilterValue(value)}
+                            >
+                              {value}
+                            </button>
+                          </li>
+                        ))
+                      ) : (
+                        <li className="muted">No values</li>
+                      )
                     ) : (
-                      <li className="muted">No values</li>
-                    )
-                  ) : (
-                    <li className="muted">Choose a column</li>
-                  )}
-                </ul>
+                      <li className="muted">Choose a column</li>
+                    )}
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="filter-status">
-            <span id="filterBadge">
-              {filterColumn && filterValue
-                ? `${COLUMN_LABELS[filterColumn]}: ${filterValue}`
-                : "No filter applied"}
-            </span>
-            <button
-              type="button"
-              id="clearFilter"
-              className="link-button"
-              hidden={!filterColumn && !filterValue}
-              onClick={clearFilter}
-            >
-              Clear
-            </button>
+            <div className="filter-status">
+              <span id="filterBadge">
+                {filterColumn && filterValue
+                  ? `${COLUMN_LABELS[filterColumn]}: ${filterValue}`
+                  : "No filter applied"}
+              </span>
+              <button
+                type="button"
+                id="clearFilter"
+                className="link-button"
+                hidden={!filterColumn && !filterValue}
+                onClick={clearFilter}
+              >
+                Clear
+              </button>
+            </div>
           </div>
         </div>
 
@@ -298,66 +359,165 @@ export default function CatalogTable({ items }: Props) {
             onChange={(event) => setSearchText(event.target.value)}
           />
         </div>
+
       </div>
 
       <div className="table-container">
         <table className="media-table">
-        <thead>
-          <tr>
-            {visibleColumns.includes("cover") && <th>Cover</th>}
-            {visibleColumns.includes("title") && <th>Title</th>}
-            {visibleColumns.includes("type") && <th>Type</th>}
-            {visibleColumns.includes("description") && <th>Description</th>}
-            <th>List</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredItems.map((item) => {
-            const inList = listIds.has(item.id);
-            return (
-              <tr key={item.id}>
-                {visibleColumns.includes("cover") && (
-                  <td>
-                    <Image
-                      src={item.cover_url ?? "/images/cover-placeholder.svg"}
-                      alt={item.title}
-                      width={60}
-                      height={90}
-                      className="catalog-cover__img"
-                    />
-                  </td>
-                )}
-                {visibleColumns.includes("title") && <td>{item.title}</td>}
-                {visibleColumns.includes("type") && <td>{item.type}</td>}
-                {visibleColumns.includes("description") && (
-                  <td>{item.description ?? ""}</td>
-                )}
-                <td className="table-action">
-                  {listStatus === "unauth" ? (
-                    <a className="action-link" href="/auth/login">
-                      Sign in
-                    </a>
-                  ) : (
-                    <button
-                      className={inList ? "action-button action-button--danger" : "action-button"}
-                      type="button"
-                      disabled={pendingId === item.id || listStatus === "loading"}
-                      onClick={() =>
-                        inList ? removeFromList(item.id) : addToList(item.id)
-                      }
-                    >
-                      {pendingId === item.id
-                        ? "Working..."
-                        : inList
-                        ? "Remove"
-                        : "Add"}
-                    </button>
+          <thead>
+            <tr>
+              {visibleColumns.includes("cover") && <th>Cover</th>}
+              {visibleColumns.includes("title") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("title")}
+                  >
+                    Title{sortKey === "title" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("release_date") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("release_date")}
+                  >
+                    Release Date
+                    {sortKey === "release_date" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("country_of_origin") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("country_of_origin")}
+                  >
+                    Country
+                    {sortKey === "country_of_origin"
+                      ? sortDirection === "asc"
+                        ? " ▲"
+                        : " ▼"
+                      : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("creators") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("creators")}
+                  >
+                    Creators
+                    {sortKey === "creators" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("description") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("description")}
+                  >
+                    Description
+                    {sortKey === "description" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("attributes") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("attributes")}
+                  >
+                    Attributes
+                    {sortKey === "attributes" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              {visibleColumns.includes("search_vector") && (
+                <th>
+                  <button
+                    type="button"
+                    className="table-sort"
+                    onClick={() => handleSort("search_vector")}
+                  >
+                    Search Vector
+                    {sortKey === "search_vector" ? (sortDirection === "asc" ? " ▲" : " ▼") : ""}
+                  </button>
+                </th>
+              )}
+              <th>List</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredItems.map((item) => {
+              const inList = listIds.has(item.id);
+              return (
+                <tr key={item.id}>
+                  {visibleColumns.includes("cover") && (
+                    <td>
+                      <Image
+                        src={item.cover_url ?? "/images/cover-placeholder.svg"}
+                        alt={item.title}
+                        width={60}
+                        height={90}
+                        className="catalog-cover__img"
+                      />
+                    </td>
                   )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
+                  {visibleColumns.includes("title") && <td>{item.title}</td>}
+                  {visibleColumns.includes("release_date") && (
+                    <td>{item.release_date ?? ""}</td>
+                  )}
+                  {visibleColumns.includes("country_of_origin") && (
+                    <td>{item.country_of_origin ?? ""}</td>
+                  )}
+                  {visibleColumns.includes("creators") && (
+                    <td>{item.creators?.join(", ") ?? ""}</td>
+                  )}
+                  {visibleColumns.includes("description") && (
+                    <td>{item.description ?? ""}</td>
+                  )}
+                  {visibleColumns.includes("attributes") && (
+                    <td>{JSON.stringify(item.attributes ?? {})}</td>
+                  )}
+                  {visibleColumns.includes("search_vector") && (
+                    <td>{item.search_vector ?? ""}</td>
+                  )}
+                  <td className="table-action">
+                    {listStatus === "unauth" ? (
+                      <a className="action-link" href="/auth/login">
+                        Sign in
+                      </a>
+                    ) : (
+                      <button
+                        className={inList ? "action-button action-button--danger" : "action-button"}
+                        type="button"
+                        disabled={pendingId === item.id || listStatus === "loading"}
+                        onClick={() =>
+                          inList ? removeFromList(item.id) : addToList(item.id)
+                        }
+                      >
+                        {pendingId === item.id
+                          ? "Working..."
+                          : inList
+                          ? "Remove"
+                          : "Add"}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
         </table>
       </div>
     </>

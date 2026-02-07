@@ -2,10 +2,19 @@ import CatalogTable from "../../components/CatalogTable";
 
 type MediaItem = {
   id: string;
+  external_id: string | null;
   title: string;
   type: string;
+  media_class: string;
+  release_date: string | null;
+  country_of_origin: string | null;
+  creators: string[] | null;
   cover_url?: string | null;
   description?: string | null;
+  attributes: Record<string, unknown>;
+  search_vector: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 type MediaResponse = {
@@ -18,21 +27,51 @@ type MediaResponse = {
 const FALLBACK_ITEMS: MediaItem[] = [
   {
     id: "fallback-1",
+    external_id: null,
     title: "Skyward Signals",
     type: "anime",
-    cover_url: "https://placehold.co/400x600?text=Skyward+Signals",
+    media_class: "media.anime",
+    release_date: null,
+    country_of_origin: null,
+    creators: null,
+    cover_url: "https://placehold.co/400x600/png?text=Skyward+Signals",
+    description: null,
+    attributes: {},
+    search_vector: null,
+    created_at: "",
+    updated_at: "",
   },
   {
     id: "fallback-2",
+    external_id: null,
     title: "The Memory Library",
     type: "book",
-    cover_url: "https://placehold.co/400x600?text=The+Memory+Library",
+    media_class: "media.book",
+    release_date: null,
+    country_of_origin: null,
+    creators: null,
+    cover_url: "https://placehold.co/400x600/png?text=The+Memory+Library",
+    description: null,
+    attributes: {},
+    search_vector: null,
+    created_at: "",
+    updated_at: "",
   },
   {
     id: "fallback-3",
+    external_id: null,
     title: "Echoes of Orion",
     type: "game",
-    cover_url: "https://placehold.co/400x600?text=Echoes+of+Orion",
+    media_class: "media.game",
+    release_date: null,
+    country_of_origin: null,
+    creators: null,
+    cover_url: "https://placehold.co/400x600/png?text=Echoes+of+Orion",
+    description: null,
+    attributes: {},
+    search_vector: null,
+    created_at: "",
+    updated_at: "",
   },
 ];
 
@@ -40,8 +79,6 @@ type CatalogParams = {
   q?: string;
   type?: string;
 };
-
-const TYPE_OPTIONS = ["", "book", "manga", "anime", "game", "podcast"];
 
 async function fetchCatalog(params: CatalogParams): Promise<MediaResponse> {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
@@ -77,21 +114,18 @@ async function fetchCatalog(params: CatalogParams): Promise<MediaResponse> {
 export default async function CatalogPage({
   searchParams,
 }: {
-  searchParams?: { q?: string; type?: string };
+  searchParams?: Promise<{ q?: string; type?: string }>;
 }) {
-  const q = searchParams?.q ?? "";
-  const type = searchParams?.type ?? "";
+  const resolvedParams = (await searchParams) ?? {};
+  const q = resolvedParams.q ?? "";
+  const type = resolvedParams.type ?? "";
   const { items, total } = await fetchCatalog({ q, type });
 
   return (
     <section className="page">
       <header className="page__header">
         <div>
-          <p className="page__eyebrow">Catalog</p>
           <h1 className="page__title">Browse the catalog</h1>
-          <p className="page__subtitle">
-            {total} items ready to track. More categories coming soon.
-          </p>
         </div>
       </header>
 

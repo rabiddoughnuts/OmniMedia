@@ -1,4 +1,6 @@
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
+import { mediaCreateSchema, mediaUpdateSchema } from "@omnimediatrak/shared";
+import { z } from "zod";
 import { getDb } from "../db.js";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -47,6 +49,15 @@ export async function mediaRoutes(
     return null;
   }
 
+  function parseBody<T>(schema: z.ZodType<T>, body: unknown, reply: FastifyReply): T | null {
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      reply.code(400);
+      return null;
+    }
+    return parsed.data;
+  }
+
   app.get<{ Querystring: MediaQuery }>("/", async (request) => {
     const db = getDb();
     const page = parsePage(request.query.page);
@@ -75,7 +86,20 @@ export async function mediaRoutes(
 
     values.push(pageSize, offset);
     const itemsResult = await db.query(
-      `SELECT id, external_id, title, media_type AS type, cover_url, description
+      `SELECT id,
+              external_id,
+              title,
+              media_type AS type,
+              media_class,
+              release_date,
+              country_of_origin,
+              creators,
+              cover_url,
+              description,
+              attributes,
+              search_vector,
+              created_at,
+              updated_at
        FROM media.media
        ${whereClause}
        ORDER BY created_at DESC
@@ -94,7 +118,20 @@ export async function mediaRoutes(
   app.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const db = getDb();
     const { rows } = await db.query(
-      `SELECT id, external_id, title, media_type AS type, cover_url, description
+      `SELECT id,
+              external_id,
+              title,
+              media_type AS type,
+              media_class,
+              release_date,
+              country_of_origin,
+              creators,
+              cover_url,
+              description,
+              attributes,
+              search_vector,
+              created_at,
+              updated_at
        FROM media.media
        WHERE id::text = $1 OR external_id = $1
        LIMIT 1`,
@@ -109,25 +146,18 @@ export async function mediaRoutes(
     return rows[0];
   });
 
-  app.post<{
-    Body: {
-      external_id?: string;
-      title: string;
-      type: string;
-      cover_url?: string | null;
-      description?: string | null;
-    };
-  }>("/", async (request, reply) => {
+  app.post("/", async (request, reply) => {
     const forbidden = requireAdmin(request, reply);
     if (forbidden) {
       return forbidden;
     }
 
-    const { external_id, title, type, cover_url, description } = request.body;
-    if (!title || !type) {
-      reply.code(400);
-      return { error: "title and type are required" };
+    const body = parseBody(mediaCreateSchema, request.body, reply);
+    if (!body) {
+      return { error: "Invalid request" };
     }
+
+    const { external_id, title, type, cover_url, description } = body;
 
     const db = getDb();
     const { rows } = await db.query(
@@ -148,22 +178,18 @@ export async function mediaRoutes(
     return rows[0];
   });
 
-  app.put<{
-    Params: { id: string };
-    Body: {
-      external_id?: string | null;
-      title?: string;
-      type?: string;
-      cover_url?: string | null;
-      description?: string | null;
-    };
-  }>("/:id", async (request, reply) => {
+  app.put<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const forbidden = requireAdmin(request, reply);
     if (forbidden) {
       return forbidden;
     }
 
-    const { external_id, title, type, cover_url, description } = request.body;
+    const body = parseBody(mediaUpdateSchema, request.body, reply);
+    if (!body) {
+      return { error: "Invalid request" };
+    }
+
+    const { external_id, title, type, cover_url, description } = body;
     const db = getDb();
 
     const { rows } = await db.query(

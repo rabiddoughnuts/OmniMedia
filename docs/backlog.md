@@ -1,80 +1,51 @@
-## Layout follow-ups
+## Priority 0 - Validation + core UX
 
-- Add light/dark theme toggle in the header.
+- UI: list status UI (status/rating/notes edits)
+- API: relationships routes (media-to-media links)
 
-Convert the catalog/list views into the table-style layout (controls bar + table)?
+## Priority 1 - UI parity polish
 
-Controls bar + filter/columns/search UI is missing on Media/Lists.
-    <!-- - The current pages render only a table, no .controls-bar, .control-group, .filter-dropdown, .filter-menu, .filter-status, .link-button, .columns-dropdown, or #searchBox markup. See page.tsx and page.tsx. -->
-    - wire up behavior next (toggle menus, apply filters, search, and column visibility)
+- UI: nav active state parity (li.active vs link)
+- UI: home page tiles hook into tracking actions
+- UI: register page parity with .register-form field rows
+- UI: body data attribute parity (data-page, data-theme)
+- UI: user profile page
+- UI: specific media detail page
 
-Filter/columns/search behavior is missing (dropdowns, filter badge, clear filter, column selection, sorting).
-    -No equivalent logic exists in the Next app (in the static version this lived in script.js).
+## Priority 2 - Platform follow-through
 
-Nav active state differs:
-    -original expects li.active (CSS targets .nav ul li.active), but current app applies active on the `<a>`. This works with current CSS, but it won’t match your original selector structure. See AppNav.tsx and globals.css.
+- API: OpenAPI-first contract + generated typed client
+- UI: TanStack Query/Table + Tailwind adoption
+- Data: Postgres FTS/pg_trgm for search
+- Observability: Sentry + structured logging
+- Mobile: Expo app start
 
-Light/Dark logo swap is missing.
-    <!-- - Original uses .logo-light/.logo-dark and theme-based visibility. Current header shows a single logo asset. See AppHeader.tsx. -->
+## Stretch / Future phases
 
-Home page content differs from original .intro, .welcome, .donate structure.
-    - Current home uses the hero panel layout and has no donate button. See page.tsx.
+- Auth: OIDC providers (Google/Apple), account linking, 2FA
+- Reviews: API + UI
+- Ads/consent system, donate button functionality, social features, subscriptions
 
-Register page layout is different.
-    - Original has .register-form with .row.one….row.six and many fields; current is a two-field email/password form. See page.tsx.
+## Done (for history)
 
-Media type sidebar has no active state (original had .media-type-buttons button.active).
-    <!-- - Current buttons are static with no selection behavior. See LeftSidebar.tsx. -->
-    - active selection to also filter the catalog/list results
+<!-- DONE: UI full column/filter coverage (controls bar, badges, clear, sort, search, columns). -->
+<!-- DONE: UI home page parity with .intro/.welcome/.donate. -->
+<!-- DONE: Convert the catalog/list views into the table-style layout (controls bar + table). -->
+<!-- DONE: The current pages render only a table, no .controls-bar, .control-group, .filter-dropdown, .filter-menu, .filter-status, .link-button, .columns-dropdown, or #searchBox markup. See page.tsx and page.tsx. -->
+<!-- DONE: Table action columns are missing. -->
+<!-- DONE: Original media table adds "Add" buttons and list table includes row-level remove buttons; current tables are read-only. See page.tsx and page.tsx. -->
+<!-- DONE: Add/remove from list in UI is missing. -->
+<!-- DONE: API supports POST /list and DELETE /list/:mediaId, but the web catalog/list tables are read-only. See page.tsx and page.tsx. -->
 
-Table action columns are missing.
-    - Original media table adds “Add” buttons and list table includes row-level remove buttons; current tables are read-only. See page.tsx and page.tsx.
-
-Body data attributes (data-page, data-theme) aren’t used the same way.
-    - You use html[data-theme], while original uses body[data-theme] and data-page. This is fine functionally but diverges from original selectors.
-
-## Functionality
-
-Add/remove from list in UI is missing.
-    - API supports POST /list and DELETE /list/:mediaId, but the web catalog/list tables are read‑only. See page.tsx and page.tsx.
-
-List status updates from UI are missing.
-    - API supports status on list entries, but there’s no UI to change status/rating/notes. See list.ts and page.tsx.
-
-OpenAPI-first contract + generated typed client not present.
-
-Zod validation shared between web/API not present (API uses manual checks)
-
-TanStack Query/Table + Tailwind not present (custom CSS and direct fetch).
-
-## Stretch
-
-OIDC providers (Google/Apple),
-    - account linking, 2FA are not implemented. Only email/password exists. See auth.ts and page.tsx.
-
-Reviews are not implemented (API and UI).
-    - Proposal lists “personal lists and reviews.” See OmniMediaTrak-Proposal.md.
-
-Postgres FTS/pg_trgm is not implemented;
-    - current search is a simple ILIKE on title. See media.ts.
-
-Taxonomy
-    - ltree isn’t implemented (media types are flat).
-
-Mobile app (Expo) not started
-
-Observability tooling (Sentry, structured logging) not wired. API uses Fastify defaults only.
-
-Ads/consent system, social features, subscriptions are future phases, not implemented
-
+<!-- Superseded: DB plan now lives in docs/database.md and migrations; kept here for archive only.
 ## DB Plan
 
-OmniMediaTrak — Data Model & Database Architecture Rationale
+OmniMediaTrak - Data Model & Database Architecture Rationale
 Overview
 
 OmniMediaTrak is a large-scale, user-centric media tracking platform designed to catalog and track all digitally trackable media types while supporting heterogeneous lists, cross-media comparison, and efficient user-scoped querying. The system prioritizes structured metadata, extensibility, and long-term scalability over encyclopedic depth.
 
-The database architecture is designed to scale to hundreds of millions of users and billions of user–media interactions, similar to major media tracking and streaming platforms.
+The database architecture is designed to scale to hundreds of millions of users and billions of user-media interactions, similar to major media tracking and streaming platforms.
 
 Core Design Principles
 
@@ -140,7 +111,7 @@ video.series.anime
 
 interactive.game.visual_novel
 
-Enables queries like “all written media” or “all books”
+Enables queries like "all written media" or "all books"
 
 attributes (JSONB)
 
@@ -160,7 +131,7 @@ starwars.skywalker.trilogy.empire_strikes_back
 
 Used for franchise browsing, not canonical relationships
 
-External Source Mapping (“Rosetta Stone”)
+External Source Mapping ("Rosetta Stone")
 CREATE TABLE media.external_links (
     media_id UUID REFERENCES media.media(id),
     source_name TEXT NOT NULL,
@@ -177,7 +148,7 @@ Allow multiple external IDs per media item
 
 Centralize ingestion and reconciliation logic
 
-users schema — Identity & Profile
+users schema - Identity & Profile
 users.users
 users.preferences
 users.settings
@@ -185,11 +156,11 @@ users.settings
 
 Contains only user identity and configuration data.
 
-interaction schema — User-Specific Data
+interaction schema - User-Specific Data
 
 This schema contains the largest and most frequently accessed tables.
 
-User–Media Tracking Table (Partitioned)
+User-Media Tracking Table (Partitioned)
 CREATE TABLE interaction.user_media (
     user_id UUID NOT NULL,
     media_id UUID NOT NULL,
@@ -297,3 +268,4 @@ No wiki-style deep lore modeling
 No user-editable global metadata
 
 No early sharding or multi-database architecture
+-->
