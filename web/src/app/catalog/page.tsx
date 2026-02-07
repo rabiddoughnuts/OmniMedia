@@ -141,7 +141,13 @@ export default async function CatalogPage({
                   className="catalog-cover__img"
                 />
               ) : (
-                <div className="catalog-cover__placeholder">No cover</div>
+                <Image
+                  src="/images/cover-placeholder.svg"
+                  alt="Cover placeholder"
+                  width={240}
+                  height={360}
+                  className="catalog-cover__img"
+                />
               )}
             </div>
             <div className="catalog-body">

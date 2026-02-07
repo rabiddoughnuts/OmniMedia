@@ -163,6 +163,28 @@ a {
   line-height: 1.5;
 }
 
+.list-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.list-card {
+  background: var(--surface);
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.list-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .form-card {
   background: var(--surface);
   border-radius: 24px;
