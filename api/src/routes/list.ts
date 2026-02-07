@@ -43,9 +43,9 @@ function parsePageSize(value?: string): number {
 
 function resolveOrder(order?: "updated" | "created"): string {
   if (order === "created") {
-    return "le.created_at";
+    return "um.created_at";
   }
-  return "le.updated_at";
+  return "um.updated_at";
 }
 
 export async function listRoutes(
@@ -64,18 +64,27 @@ export async function listRoutes(
     const orderColumn = resolveOrder(request.query.order);
 
     const totalResult = await db.query(
-      "SELECT COUNT(*)::int AS total FROM list_entries WHERE user_id = $1",
+      "SELECT COUNT(*)::int AS total FROM interaction.user_media WHERE user_id = $1",
       [request.session.userId]
     );
 
     const { rows } = await db.query(
-      `SELECT 
-        le.id, le.status, le.rating, le.notes, le.created_at, le.updated_at,
-        m.id as media_id, m.title, m.type, m.cover_url, m.description
-       FROM list_entries le
-       JOIN media_items m ON le.media_id = m.id
-       WHERE le.user_id = $1
-         ORDER BY ${orderColumn} DESC
+      `SELECT
+        um.media_id AS id,
+        um.media_id,
+        um.status,
+        um.rating,
+        um.notes,
+        um.created_at,
+        um.updated_at,
+        m.title,
+        m.media_type AS type,
+        m.cover_url,
+        m.description
+       FROM interaction.user_media um
+       JOIN media.media m ON um.media_id = m.id
+       WHERE um.user_id = $1
+       ORDER BY ${orderColumn} DESC
        LIMIT $2 OFFSET $3`,
       [request.session.userId, pageSize, offset]
     );
@@ -106,7 +115,7 @@ export async function listRoutes(
 
     // Check if media exists
     const { rows: mediaCheck } = await db.query(
-      "SELECT id FROM media_items WHERE id = $1",
+      "SELECT id FROM media.media WHERE id = $1",
       [mediaId]
     );
 
@@ -117,12 +126,13 @@ export async function listRoutes(
 
     // Upsert list entry
     const { rows } = await db.query(
-      `INSERT INTO list_entries (user_id, media_id, status, rating, notes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO interaction.user_media
+        (user_id, media_id, status, rating, notes, meta_snapshot)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (user_id, media_id)
-       DO UPDATE SET status = $3, rating = $4, notes = $5, updated_at = NOW()
+       DO UPDATE SET status = $3, rating = $4, notes = $5, meta_snapshot = $6, updated_at = NOW()
        RETURNING *`,
-      [request.session.userId, mediaId, status, rating, notes]
+      [request.session.userId, mediaId, status, rating, notes ?? null, {}]
     );
 
     return { entry: rows[0] };
@@ -133,7 +143,7 @@ export async function listRoutes(
     const db = getDb();
 
     const { rowCount } = await db.query(
-      "DELETE FROM list_entries WHERE user_id = $1 AND media_id = $2",
+      "DELETE FROM interaction.user_media WHERE user_id = $1 AND media_id = $2",
       [request.session.userId, request.params.mediaId]
     );
 

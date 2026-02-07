@@ -1,4 +1,4 @@
-import Image from "next/image";
+import CatalogTable from "../../components/CatalogTable";
 
 type MediaItem = {
   id: string;
@@ -128,97 +128,7 @@ export default async function CatalogPage({
         </a>
       </form>
 
-      <div className="controls-bar">
-        <div className="control-group filter-group">
-          <div className="filter-dropdown">
-            <button type="button" id="filterToggle" aria-expanded="false">
-              Filters
-            </button>
-            <div className="filter-menu" id="filterMenu" hidden>
-              <div className="filter-pane">
-                <p className="menu-label">Columns</p>
-                <ul id="filterColumnsList" className="filter-list">
-                  <li className="muted">Genre</li>
-                  <li>Tags</li>
-                  <li>Release date</li>
-                </ul>
-              </div>
-              <div className="filter-pane">
-                <p className="menu-label">Values</p>
-                <ul id="filterValuesList" className="filter-list">
-                  <li className="muted">Choose a column</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="filter-status">
-            <span id="filterBadge">No filter applied</span>
-            <button type="button" id="clearFilter" className="link-button" hidden>
-              Clear
-            </button>
-          </div>
-        </div>
-
-        <div className="control-group">
-          <div className="columns-dropdown">
-            <button type="button" id="columnsToggle" aria-expanded="false">
-              Columns
-            </button>
-            <div className="columns-menu" id="columnsMenu" hidden>
-              <div id="columnsOptions" className="columns-options">
-                <label>
-                  <input type="checkbox" defaultChecked /> Title
-                </label>
-                <label>
-                  <input type="checkbox" defaultChecked /> Type
-                </label>
-                <label>
-                  <input type="checkbox" defaultChecked /> Release date
-                </label>
-                <label>
-                  <input type="checkbox" /> Cast
-                </label>
-              </div>
-              <p className="columns-hint">Select up to 4 columns.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="control-group">
-          <input type="text" id="searchBox" placeholder="Search titles, genres, tags..." />
-        </div>
-      </div>
-
-      <div className="table-container">
-        <table className="media-table">
-          <thead>
-            <tr>
-              <th>Cover</th>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.id}>
-                <td>
-                  <Image
-                    src={item.cover_url ?? "/images/cover-placeholder.svg"}
-                    alt={item.title}
-                    width={60}
-                    height={90}
-                    className="catalog-cover__img"
-                  />
-                </td>
-                <td>{item.title}</td>
-                <td>{item.type}</td>
-                <td>{item.description ?? ""}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <CatalogTable items={items} />
     </section>
   );
 }

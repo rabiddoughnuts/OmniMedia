@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyPluginOptions } from "fastify";
+import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
 import { getDb } from "../db.js";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -31,6 +31,22 @@ export async function mediaRoutes(
   app: FastifyInstance,
   _opts: FastifyPluginOptions
 ) {
+  const adminToken = process.env.MEDIA_ADMIN_TOKEN;
+
+  function toLtreeLabel(value: string): string {
+    return value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+  }
+
+  function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
+    const headerValue = request.headers["x-admin-token"];
+    const token = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+    if (!adminToken || token !== adminToken) {
+      reply.code(403);
+      return { error: "Forbidden" };
+    }
+    return null;
+  }
+
   app.get<{ Querystring: MediaQuery }>("/", async (request) => {
     const db = getDb();
     const page = parsePage(request.query.page);
@@ -42,7 +58,7 @@ export async function mediaRoutes(
 
     if (request.query.type) {
       values.push(request.query.type);
-      filters.push(`type = $${values.length}`);
+      filters.push(`media_type = $${values.length}`);
     }
 
     if (request.query.q) {
@@ -53,14 +69,14 @@ export async function mediaRoutes(
     const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
 
     const countResult = await db.query(
-      `SELECT COUNT(*)::int AS total FROM media_items ${whereClause}`,
+      `SELECT COUNT(*)::int AS total FROM media.media ${whereClause}`,
       values
     );
 
     values.push(pageSize, offset);
     const itemsResult = await db.query(
-      `SELECT id, external_id, title, type, cover_url, description
-       FROM media_items
+      `SELECT id, external_id, title, media_type AS type, cover_url, description
+       FROM media.media
        ${whereClause}
        ORDER BY created_at DESC
        LIMIT $${values.length - 1} OFFSET $${values.length}`,
@@ -78,9 +94,9 @@ export async function mediaRoutes(
   app.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
     const db = getDb();
     const { rows } = await db.query(
-      `SELECT id, external_id, title, type, cover_url, description
-       FROM media_items
-       WHERE id = $1 OR external_id = $1
+      `SELECT id, external_id, title, media_type AS type, cover_url, description
+       FROM media.media
+       WHERE id::text = $1 OR external_id = $1
        LIMIT 1`,
       [request.params.id]
     );
@@ -91,5 +107,112 @@ export async function mediaRoutes(
     }
 
     return rows[0];
+  });
+
+  app.post<{
+    Body: {
+      external_id?: string;
+      title: string;
+      type: string;
+      cover_url?: string | null;
+      description?: string | null;
+    };
+  }>("/", async (request, reply) => {
+    const forbidden = requireAdmin(request, reply);
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const { external_id, title, type, cover_url, description } = request.body;
+    if (!title || !type) {
+      reply.code(400);
+      return { error: "title and type are required" };
+    }
+
+    const db = getDb();
+    const { rows } = await db.query(
+      `INSERT INTO media.media (external_id, media_type, media_class, title, cover_url, description)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, external_id, title, media_type AS type, cover_url, description`,
+      [
+        external_id ?? null,
+        type,
+        `media.${toLtreeLabel(type)}`,
+        title,
+        cover_url ?? null,
+        description ?? null,
+      ]
+    );
+
+    reply.code(201);
+    return rows[0];
+  });
+
+  app.put<{
+    Params: { id: string };
+    Body: {
+      external_id?: string | null;
+      title?: string;
+      type?: string;
+      cover_url?: string | null;
+      description?: string | null;
+    };
+  }>("/:id", async (request, reply) => {
+    const forbidden = requireAdmin(request, reply);
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const { external_id, title, type, cover_url, description } = request.body;
+    const db = getDb();
+
+    const { rows } = await db.query(
+        `UPDATE media.media
+       SET external_id = COALESCE($2, external_id),
+           title = COALESCE($3, title),
+           media_type = COALESCE($4, media_type),
+           media_class = COALESCE($7, media_class),
+           cover_url = COALESCE($5, cover_url),
+           description = COALESCE($6, description),
+           updated_at = NOW()
+         WHERE id::text = $1 OR external_id = $1
+       RETURNING id, external_id, title, media_type AS type, cover_url, description`,
+      [
+        request.params.id,
+        external_id ?? null,
+        title ?? null,
+        type ?? null,
+        cover_url ?? null,
+        description ?? null,
+        type ? `media.${toLtreeLabel(type)}` : null,
+      ]
+    );
+
+    if (rows.length === 0) {
+      reply.code(404);
+      return { error: "Not found" };
+    }
+
+    return rows[0];
+  });
+
+  app.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
+    const forbidden = requireAdmin(request, reply);
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const db = getDb();
+    const { rowCount } = await db.query(
+      "DELETE FROM media.media WHERE id::text = $1 OR external_id = $1",
+      [request.params.id]
+    );
+
+    if (!rowCount) {
+      reply.code(404);
+      return { error: "Not found" };
+    }
+
+    return { success: true };
   });
 }

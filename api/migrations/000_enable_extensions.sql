@@ -1,5 +1,7 @@
 -- Up Migration
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS ltree;
 
 -- Down Migration
+DROP EXTENSION IF EXISTS ltree;
 DROP EXTENSION IF EXISTS pgcrypto;

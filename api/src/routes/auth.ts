@@ -57,8 +57,8 @@ export async function authRoutes(
     const db = getDb();
 
     // Check if user exists
-    const { rows: existing } = await db.query(
-      "SELECT id FROM users WHERE email = $1",
+     const { rows: existing } = await db.query(
+       "SELECT id FROM users.users WHERE email = $1",
       [normalizedEmail]
     );
 
@@ -72,7 +72,7 @@ export async function authRoutes(
 
     // Insert user
     const { rows } = await db.query(
-      `INSERT INTO users (email, password_hash)
+       `INSERT INTO users.users (email, password_hash)
        VALUES ($1, $2)
        RETURNING id, email, created_at`,
       [normalizedEmail, passwordHash]
@@ -114,7 +114,7 @@ export async function authRoutes(
     const db = getDb();
 
     const { rows } = await db.query(
-      "SELECT id, email, password_hash, created_at FROM users WHERE email = $1",
+       "SELECT id, email, password_hash, created_at FROM users.users WHERE email = $1",
       [normalizedEmail]
     );
 
@@ -157,7 +157,7 @@ export async function authRoutes(
     const db = getDb();
 
     const { rows } = await db.query(
-      "SELECT id, email, created_at FROM users WHERE id = $1",
+       "SELECT id, email, created_at FROM users.users WHERE id = $1",
       [request.session.userId]
     );
 

@@ -34,7 +34,6 @@ sudo -u postgres initdb -D /var/lib/postgres/data
 sudo systemctl start postgresql
 sudo systemctl enable postgresql
 sudo -u postgres createdb omnimediatrak
-sudo -u postgres psql -d omnimediatrak -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
 ```
 
 ### 2. Set up the database
@@ -42,6 +41,13 @@ sudo -u postgres psql -d omnimediatrak -c "CREATE EXTENSION IF NOT EXISTS pgcryp
 ```bash
 cd api
 npm run db:setup
+```
+
+Set these environment variables (example):
+
+```bash
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/omnimediatrak"
+export MEDIA_ADMIN_TOKEN="your-admin-token"
 ```
 
 ### 3. Start API
@@ -92,4 +98,13 @@ List (authenticated):
 
 ```bash
 curl -i -b cookies.txt http://localhost:3001/list
+```
+
+Media admin (requires `MEDIA_ADMIN_TOKEN`):
+
+```bash
+curl -i -X POST http://localhost:3001/media \
+	-H "Content-Type: application/json" \
+	-H "X-Admin-Token: $MEDIA_ADMIN_TOKEN" \
+	-d '{"title":"New Title","type":"book"}'
 ```

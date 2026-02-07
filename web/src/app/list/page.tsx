@@ -27,6 +27,7 @@ type ListResponse = {
 export default function ListPage() {
   const [items, setItems] = useState<ListItem[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("loading");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
@@ -51,6 +52,26 @@ export default function ListPage() {
 
     load();
   }, []);
+
+  async function handleRemove(mediaId: string) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+    setPendingId(mediaId);
+
+    try {
+      const response = await fetch(`${baseUrl}/list/${mediaId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to remove");
+      }
+
+      setItems((prev) => prev.filter((item) => item.media_id !== mediaId));
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   return (
     <section className="page">
@@ -144,6 +165,7 @@ export default function ListPage() {
                   <th>Status</th>
                   <th>Rating</th>
                   <th>Notes</th>
+                  <th>Remove</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,6 +185,16 @@ export default function ListPage() {
                     <td>{item.status}</td>
                     <td>{item.rating ?? ""}</td>
                     <td>{item.notes ?? ""}</td>
+                    <td className="table-action">
+                      <button
+                        className="action-button action-button--danger"
+                        type="button"
+                        disabled={pendingId === item.media_id}
+                        onClick={() => handleRemove(item.media_id)}
+                      >
+                        {pendingId === item.media_id ? "Working..." : "Remove"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

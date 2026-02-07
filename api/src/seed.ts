@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getDb, closeDb } from "./db.js";
+import { closeDb, getDb } from "./db.js";
 
 const mediaItems = [
   {
@@ -84,6 +84,10 @@ const mediaItems = [
   },
 ];
 
+function toLtreeLabel(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
+}
+
 async function seed() {
   const db = getDb();
 
@@ -91,22 +95,25 @@ async function seed() {
   const params: Array<string | number | null> = [];
 
   mediaItems.forEach((item, index) => {
-    const baseIndex = index * 6;
+    const baseIndex = index * 8;
     values.push(
-      `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6})`
+      `($${baseIndex + 1}, $${baseIndex + 2}, $${baseIndex + 3}, $${baseIndex + 4}, $${baseIndex + 5}, $${baseIndex + 6}, $${baseIndex + 7}, $${baseIndex + 8})`
     );
     params.push(
       item.id,
       item.external_id,
       item.title,
       item.type,
+      `media.${toLtreeLabel(item.type)}`,
       item.cover_url ?? null,
-      item.description ?? null
+      item.description ?? null,
+      {}
     );
   });
 
   await db.query(
-    `INSERT INTO media_items (id, external_id, title, type, cover_url, description)
+    `INSERT INTO media.media
+      (id, external_id, title, media_type, media_class, cover_url, description, attributes)
      VALUES ${values.join(", ")}
      ON CONFLICT (external_id) DO NOTHING`,
     params

@@ -21,23 +21,25 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <AppHeader />
 
-        <AppNav />
+        <div className="frame">
+          <AppNav />
 
-        <main className="main">
-          <aside className="left">
-            <LeftSidebar />
-          </aside>
-          <section className="center">{children}</section>
-          <aside className="right">
-            <div className="ad-slot">
-              <img src="/images/right-ad-placeholder.svg" alt="Right ad slot" />
-            </div>
-          </aside>
-        </main>
+          <main className="main">
+            <aside className="left">
+              <LeftSidebar />
+            </aside>
+            <section className="center">{children}</section>
+            <aside className="right">
+              <div className="ad-slot">
+                <img src="/images/right-ad-placeholder.svg" alt="Right ad slot" />
+              </div>
+            </aside>
+          </main>
 
-        <footer className="footer">
-          <p>&copy; OmniMedia Solutions</p>
-        </footer>
+          <footer className="footer">
+            <p>&copy; OmniMedia Solutions</p>
+          </footer>
+        </div>
       </body>
     </html>
   );

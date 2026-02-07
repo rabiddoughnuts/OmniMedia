@@ -9,7 +9,7 @@ export type DbConfig = {
 
 let pool: Pool | null = null;
 
-export function getDbConfig(): DbConfig {
+function getDbConfig(): DbConfig {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error("DATABASE_URL environment variable is required");
