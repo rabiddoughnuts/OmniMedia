@@ -9,7 +9,7 @@ This document is a high-level synopsis of the OmniMediaTrak architecture, roadma
 OmniMediaTrak is a global media tracking platform covering books, manga, anime, games, podcasts, live events, and more. The platform starts with a single-region, managed-first stack and evolves into multi-region compute with a single logical database that scales via partitioning, indexing, and replicas.
 
 **Primary goals:**
-
+&Q
 - Fast catalog browsing and personal list tracking
 - Low operational burden (managed services)
 - Clear path to scale and add features without redesign
