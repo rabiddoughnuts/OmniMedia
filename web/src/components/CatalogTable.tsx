@@ -68,7 +68,7 @@ function getColumnValue(item: MediaItem, key: ColumnKey): string {
 
 export default function CatalogTable({ items }: Props) {
   const [listIds, setListIds] = useState<Set<string>>(new Set());
-  const [listStatus, setListStatus] = useState<"loading" | "ready" | "unauth">(
+  const [listStatus, setListStatus] = useState<"loading" | "ready" | "unauth" | "error">(
     "loading"
   );
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -100,7 +100,8 @@ export default function CatalogTable({ items }: Props) {
             setListStatus("unauth");
             return;
           }
-          throw new Error("Failed to load list");
+          setListStatus("error");
+          return;
         }
 
         const data = (await response.json()) as ListResponse;
@@ -108,7 +109,7 @@ export default function CatalogTable({ items }: Props) {
         setListIds(ids);
         setListStatus("ready");
       } catch {
-        setListStatus("unauth");
+        setListStatus("error");
       }
     }
 
@@ -497,6 +498,10 @@ export default function CatalogTable({ items }: Props) {
                       <a className="action-link" href="/auth/login">
                         Sign in
                       </a>
+                    ) : listStatus === "error" ? (
+                      <button className="action-button" type="button" disabled>
+                        Unavailable
+                      </button>
                     ) : (
                       <button
                         className={inList ? "action-button action-button--danger" : "action-button"}

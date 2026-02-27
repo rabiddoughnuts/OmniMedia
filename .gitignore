@@ -27,6 +27,12 @@ Thumbs.db
 *.swp
 *.swo
 
+# Copilot scratch
+.copilot/
+.github/copilot-instructions.md
+.copilot/system-context.md
+.copilot/plan-tracker.md
+
 # Testing
 coverage/
 

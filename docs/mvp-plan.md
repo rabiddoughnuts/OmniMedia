@@ -10,7 +10,7 @@ This is a living plan for the current MVP milestone.
 
 - Sign in with email/password (local accounts only for MVP)
 - Browse catalog list (public) with basic search/type filtering
-- Add/remove a title to a personal list (planned/in-progress/completed)
+- Add/remove a title to a personal list (default planned; status edits later)
 - View personal list
 
 ### Data model (minimum)
@@ -26,6 +26,7 @@ This is a living plan for the current MVP milestone.
 - Ingestion jobs
 - Multi-region
 - Search beyond simple text filter
+- List status edits (status/rating/notes)
 
 ## Tech choices for MVP
 

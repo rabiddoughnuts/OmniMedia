@@ -27,6 +27,7 @@ This document describes the API surface, authentication model, and request/respo
 - POST `/auth/register`
 - POST `/auth/login`
 - POST `/auth/logout`
+- GET `/auth/me`
 
 ### Media
 
@@ -41,7 +42,7 @@ This document describes the API surface, authentication model, and request/respo
 - GET `/list`
 - POST `/list`
 - DELETE `/list/:mediaId`
-- PATCH `/list/:mediaId` (status, rating, notes)
+- PATCH `/list/:mediaId` (status, rating, notes) (planned)
 
 ### Relationships (planned)
 

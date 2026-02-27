@@ -1,26 +1,13 @@
-import type { FastifyInstance, FastifyPluginOptions, FastifyReply, FastifyRequest } from "fastify";
-import { mediaCreateSchema, mediaUpdateSchema } from "@omnimediatrak/shared";
-import { z } from "zod";
-import { getDb } from "../db.js";
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 50;
-
-function parsePage(value?: string): number {
-  const parsed = Number(value ?? 1);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return 1;
-  }
-  return Math.floor(parsed);
-}
-
-function parsePageSize(value?: string): number {
-  const parsed = Number(value ?? DEFAULT_PAGE_SIZE);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return DEFAULT_PAGE_SIZE;
-  }
-  return Math.min(Math.floor(parsed), MAX_PAGE_SIZE);
-}
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import {
+  createMedia,
+  deleteMedia,
+  getMediaByIdOrExternal,
+  listMedia,
+  updateMedia,
+} from "../services/media-service.js";
+import { parseMediaCreateBody, parseMediaUpdateBody } from "../validation/media.js";
+import { parseMediaQuery } from "../validation/query.js";
 
 type MediaQuery = {
   page?: string;
@@ -30,14 +17,9 @@ type MediaQuery = {
 };
 
 export async function mediaRoutes(
-  app: FastifyInstance,
-  _opts: FastifyPluginOptions
+  app: FastifyInstance
 ) {
   const adminToken = process.env.MEDIA_ADMIN_TOKEN;
-
-  function toLtreeLabel(value: string): string {
-    return value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
-  }
 
   function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
     const headerValue = request.headers["x-admin-token"];
@@ -49,101 +31,19 @@ export async function mediaRoutes(
     return null;
   }
 
-  function parseBody<T>(schema: z.ZodType<T>, body: unknown, reply: FastifyReply): T | null {
-    const parsed = schema.safeParse(body);
-    if (!parsed.success) {
-      reply.code(400);
-      return null;
-    }
-    return parsed.data;
-  }
-
   app.get<{ Querystring: MediaQuery }>("/", async (request) => {
-    const db = getDb();
-    const page = parsePage(request.query.page);
-    const pageSize = parsePageSize(request.query.pageSize);
-    const offset = (page - 1) * pageSize;
-
-    const filters: string[] = [];
-    const values: Array<string | number> = [];
-
-    if (request.query.type) {
-      values.push(request.query.type);
-      filters.push(`media_type = $${values.length}`);
-    }
-
-    if (request.query.q) {
-      values.push(`%${request.query.q}%`);
-      filters.push(`title ILIKE $${values.length}`);
-    }
-
-    const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
-
-    const countResult = await db.query(
-      `SELECT COUNT(*)::int AS total FROM media.media ${whereClause}`,
-      values
-    );
-
-    values.push(pageSize, offset);
-    const itemsResult = await db.query(
-      `SELECT id,
-              external_id,
-              title,
-              media_type AS type,
-              media_class,
-              release_date,
-              country_of_origin,
-              creators,
-              cover_url,
-              description,
-              attributes,
-              search_vector,
-              created_at,
-              updated_at
-       FROM media.media
-       ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT $${values.length - 1} OFFSET $${values.length}`,
-      values
-    );
-
-    return {
-      items: itemsResult.rows,
-      page,
-      pageSize,
-      total: countResult.rows[0]?.total ?? 0,
-    };
+    const query = parseMediaQuery(request.query);
+    return listMedia(query);
   });
 
   app.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
-    const db = getDb();
-    const { rows } = await db.query(
-      `SELECT id,
-              external_id,
-              title,
-              media_type AS type,
-              media_class,
-              release_date,
-              country_of_origin,
-              creators,
-              cover_url,
-              description,
-              attributes,
-              search_vector,
-              created_at,
-              updated_at
-       FROM media.media
-       WHERE id::text = $1 OR external_id = $1
-       LIMIT 1`,
-      [request.params.id]
-    );
-
-    if (rows.length === 0) {
+    const media = await getMediaByIdOrExternal(request.params.id);
+    if (!media) {
       reply.code(404);
       return { message: "Not found" };
     }
 
-    return rows[0];
+    return media;
   });
 
   app.post("/", async (request, reply) => {
@@ -152,30 +52,10 @@ export async function mediaRoutes(
       return forbidden;
     }
 
-    const body = parseBody(mediaCreateSchema, request.body, reply);
-    if (!body) {
-      return { error: "Invalid request" };
-    }
-
-    const { external_id, title, type, cover_url, description } = body;
-
-    const db = getDb();
-    const { rows } = await db.query(
-      `INSERT INTO media.media (external_id, media_type, media_class, title, cover_url, description)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, external_id, title, media_type AS type, cover_url, description`,
-      [
-        external_id ?? null,
-        type,
-        `media.${toLtreeLabel(type)}`,
-        title,
-        cover_url ?? null,
-        description ?? null,
-      ]
-    );
-
+    const input = parseMediaCreateBody(request.body);
+    const created = await createMedia(input);
     reply.code(201);
-    return rows[0];
+    return created;
   });
 
   app.put<{ Params: { id: string } }>("/:id", async (request, reply) => {
@@ -184,42 +64,30 @@ export async function mediaRoutes(
       return forbidden;
     }
 
-    const body = parseBody(mediaUpdateSchema, request.body, reply);
-    if (!body) {
-      return { error: "Invalid request" };
-    }
-
-    const { external_id, title, type, cover_url, description } = body;
-    const db = getDb();
-
-    const { rows } = await db.query(
-        `UPDATE media.media
-       SET external_id = COALESCE($2, external_id),
-           title = COALESCE($3, title),
-           media_type = COALESCE($4, media_type),
-           media_class = COALESCE($7, media_class),
-           cover_url = COALESCE($5, cover_url),
-           description = COALESCE($6, description),
-           updated_at = NOW()
-         WHERE id::text = $1 OR external_id = $1
-       RETURNING id, external_id, title, media_type AS type, cover_url, description`,
-      [
-        request.params.id,
-        external_id ?? null,
-        title ?? null,
-        type ?? null,
-        cover_url ?? null,
-        description ?? null,
-        type ? `media.${toLtreeLabel(type)}` : null,
-      ]
-    );
-
-    if (rows.length === 0) {
+    const input = parseMediaUpdateBody(request.body);
+    const updated = await updateMedia(request.params.id, input);
+    if (!updated) {
       reply.code(404);
       return { error: "Not found" };
     }
 
-    return rows[0];
+    return updated;
+  });
+
+  app.patch<{ Params: { id: string } }>("/:id", async (request, reply) => {
+    const forbidden = requireAdmin(request, reply);
+    if (forbidden) {
+      return forbidden;
+    }
+
+    const input = parseMediaUpdateBody(request.body);
+    const updated = await updateMedia(request.params.id, input);
+    if (!updated) {
+      reply.code(404);
+      return { error: "Not found" };
+    }
+
+    return updated;
   });
 
   app.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
@@ -228,13 +96,8 @@ export async function mediaRoutes(
       return forbidden;
     }
 
-    const db = getDb();
-    const { rowCount } = await db.query(
-      "DELETE FROM media.media WHERE id::text = $1 OR external_id = $1",
-      [request.params.id]
-    );
-
-    if (!rowCount) {
+    const deleted = await deleteMedia(request.params.id);
+    if (!deleted) {
       reply.code(404);
       return { error: "Not found" };
     }

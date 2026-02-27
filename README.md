@@ -97,6 +97,27 @@ npm run dev
 - /auth/login
 - /auth/logout
 
+## API Routes
+
+Auth
+- POST /auth/register
+- POST /auth/login
+- POST /auth/logout
+- GET /auth/me
+
+Media
+- GET /media
+- GET /media/:id
+- POST /media
+- PUT /media/:id
+- PATCH /media/:id
+- DELETE /media/:id
+
+List
+- GET /list
+- POST /list
+- DELETE /list/:mediaId
+
 ## Quick API check (curl)
 
 Register:

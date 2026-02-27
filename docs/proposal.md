@@ -1,6 +1,6 @@
 # OmniMediaTrak Proposal (Synopsis)
 
-**Last updated:** 2026-02-07
+**Last updated:** 2026-02-25
 
 This document is a high-level synopsis of the OmniMediaTrak architecture, roadmap, and technology choices. Each topic links to a deeper plan for implementation details, optimization, and runbooks.
 
@@ -9,7 +9,6 @@ This document is a high-level synopsis of the OmniMediaTrak architecture, roadma
 OmniMediaTrak is a global media tracking platform covering books, manga, anime, games, podcasts, live events, and more. The platform starts with a single-region, managed-first stack and evolves into multi-region compute with a single logical database that scales via partitioning, indexing, and replicas.
 
 **Primary goals:**
-&Q
 - Fast catalog browsing and personal list tracking
 - Low operational burden (managed services)
 - Clear path to scale and add features without redesign
@@ -62,6 +61,7 @@ Deep plan: [ingestion.md](ingestion.md)
 
 - Catalog browsing and personal lists
 - Table-first UI with filters, columns, and list actions
+- Home intro + donate panel, with tiles planned to hook into tracking actions
 - Parity checklist for the original UI layout
 
 Deep plan: [frontend.md](frontend.md)

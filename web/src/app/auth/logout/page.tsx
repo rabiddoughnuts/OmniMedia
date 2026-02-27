@@ -27,6 +27,7 @@ export default function LogoutPage() {
         throw new Error("Logout failed");
       }
 
+      window.dispatchEvent(new Event("omnimediatrak:auth"));
       setFeedback({ type: "success", message: "You are signed out." });
     } catch (error) {
       setFeedback({

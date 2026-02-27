@@ -124,6 +124,26 @@ const importFiles: ImportFile[] = [
   { fileName: "Webtoons.json", rootKey: "Webtoons", mediaType: "webtoons" },
 ];
 
+const TYPE_NORMALIZATION: Record<string, string> = {
+  audiobooks: "audiobook",
+  books: "book",
+  comics: "comic",
+  games: "game",
+  lightnovels: "lightnovel",
+  liveevents: "liveevent",
+  movies: "movie",
+  podcasts: "podcast",
+  shows: "show",
+  visualnovels: "visualnovel",
+  webnovels: "webnovel",
+  webtoons: "webtoon",
+};
+
+function normalizeMediaType(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  return TYPE_NORMALIZATION[normalized] ?? normalized;
+}
+
 function toLtreeLabel(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_]+/g, "_");
 }
@@ -219,6 +239,7 @@ function toImportItem(
   }
 
   const title = rawTitle.trim();
+  const normalizedType = normalizeMediaType(mediaType);
   const description = typeof raw.synopsis === "string" ? raw.synopsis.trim() : null;
   const country =
     typeof raw.country_of_origin === "string" ? raw.country_of_origin.trim() : null;
@@ -226,7 +247,13 @@ function toImportItem(
   const creators = normalizeCreator(raw.creator);
   const yearForId = normalizeYearForId(raw.year_of_release);
   const creatorSlug = normalizeCreatorForId(raw.creator);
-  const externalId = buildExternalId(mediaType, title, yearForId, creatorSlug, seenExternalIds);
+  const externalId = buildExternalId(
+    normalizedType,
+    title,
+    yearForId,
+    creatorSlug,
+    seenExternalIds
+  );
 
   const attributes: Record<string, unknown> = { ...raw };
   delete attributes.title;
@@ -238,8 +265,8 @@ function toImportItem(
   return {
     external_id: externalId,
     title,
-    media_type: mediaType,
-    media_class: `media.${toLtreeLabel(mediaType)}`,
+    media_type: normalizedType,
+    media_class: `media.${toLtreeLabel(normalizedType)}`,
     cover_url: null,
     description,
     country_of_origin: country,
@@ -258,14 +285,14 @@ async function loadImportItems(importDir: string): Promise<ImportItem[]> {
     let content: string;
     try {
       content = await fs.readFile(filePath, "utf-8");
-    } catch (error) {
+    } catch {
       throw new Error(`Failed to read ${filePath}. Set MEDIA_IMPORT_DIR to the data folder.`);
     }
 
     let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(content) as Record<string, unknown>;
-    } catch (error) {
+    } catch {
       throw new Error(`Failed to parse ${filePath}. Ensure the JSON is valid.`);
     }
 

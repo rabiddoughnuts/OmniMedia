@@ -13,7 +13,8 @@ OmniMediaTrak uses a local-first ingestion pipeline that populates the catalog w
 - Local/manual execution via seed script
 - Reads JSON files from `MEDIA_IMPORT_DIR`
 - Normalizes media fields into `media.media` and `attributes` JSONB
-- Builds `external_id` using media type + title + year + creator slug
+- Normalizes media type names (plural -> singular) before storing
+- Builds `external_id` using normalized media type + title + year + creator slug
 - Uses `ON CONFLICT (external_id) DO NOTHING` to avoid duplicates
 
 ## External ID strategy

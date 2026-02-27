@@ -43,6 +43,7 @@ export default function LoginPage() {
       const nextPath = searchParams.get("next") ?? "/";
       setFeedback({ type: "success", message: "Signed in. Welcome back!" });
       setForm({ email: "", password: "" });
+      window.dispatchEvent(new Event("omnimediatrak:auth"));
       router.push(nextPath);
     } catch (error) {
       setFeedback({

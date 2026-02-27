@@ -19,7 +19,7 @@ This document describes the web UI structure and the parity checklist against th
 
 - Query params map to filters
 - Table state drives visible columns and sorting
-- List mutations update UI state and revalidate
+- List mutations update UI state locally after API responses
 
 ## Parity checklist
 

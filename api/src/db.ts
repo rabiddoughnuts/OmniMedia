@@ -1,5 +1,7 @@
 import { Pool } from "pg";
 
+// Note: Raw pg access is retained for complex queries alongside Sequelize usage.
+
 export type DbConfig = {
   connectionString: string;
   max: number;

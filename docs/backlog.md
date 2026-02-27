@@ -9,6 +9,7 @@
 
 - UI: nav active state parity (li.active vs link)
 - UI: home page tiles hook into tracking actions
+- UI: controls bar parity (multi-filter + max 4 visible columns)
 - UI: register page parity with .register-form field rows
 - UI: body data attribute parity (data-page, data-theme)
 - UI: user profile page

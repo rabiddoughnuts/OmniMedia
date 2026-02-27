@@ -8,6 +8,9 @@ import session from "@fastify/session";
 import { mediaRoutes } from "./routes/media.js";
 import { authRoutes } from "./routes/auth.js";
 import { listRoutes } from "./routes/list.js";
+import { registerRequestLogging } from "./middleware/logging.js";
+import { registerErrorHandler } from "./middleware/error-handler.js";
+import { getSequelize } from "./models/index.js";
 
 export type AppConfig = {
   port: number;
@@ -67,6 +70,15 @@ export async function createServer() {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
     },
   });
+
+  if (process.env.DATABASE_URL) {
+    getSequelize();
+  } else {
+    app.log.warn("DATABASE_URL not set; Sequelize models not initialized");
+  }
+
+  registerRequestLogging(app);
+  registerErrorHandler(app);
 
   app.get("/health", async () => {
     return { status: "ok" };

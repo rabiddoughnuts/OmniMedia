@@ -54,6 +54,7 @@ export default function AppHeader() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
     async function loadUser() {
@@ -63,18 +64,34 @@ export default function AppHeader() {
         });
 
         if (!response.ok) {
-          setUser(null);
+          if (isMounted) {
+            setUser(null);
+          }
           return;
         }
 
         const data = (await response.json()) as { user?: User };
-        setUser(data.user ?? null);
+        if (isMounted) {
+          setUser(data.user ?? null);
+        }
       } catch {
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+        }
       }
     }
 
-    loadUser();
+    const handleAuthChanged = () => {
+      void loadUser();
+    };
+
+    void loadUser();
+    window.addEventListener("omnimediatrak:auth", handleAuthChanged);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("omnimediatrak:auth", handleAuthChanged);
+    };
   }, []);
 
   useEffect(() => {

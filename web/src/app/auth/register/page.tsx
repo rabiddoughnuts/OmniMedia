@@ -43,6 +43,7 @@ export default function RegisterPage() {
       const nextPath = searchParams.get("next") ?? "/";
       setFeedback({ type: "success", message: "Account created. Welcome in!" });
       setForm({ email: "", password: "" });
+      window.dispatchEvent(new Event("omnimediatrak:auth"));
       router.push(nextPath);
     } catch (error) {
       setFeedback({
