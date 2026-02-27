@@ -9,10 +9,13 @@ Repository started during Wright State Hackathon 2026, for a multi-media all in 
 
 ## Documentation
 
-- Docs index: [docs/index.md](docs/index.md)
-- Proposal synopsis: [docs/proposal.md](docs/proposal.md)
-- MVP plan: [docs/mvp-plan.md](docs/mvp-plan.md)
-- Database plan: [docs/database.md](docs/database.md)
+- [docs/proposal.md](docs/proposal.md): Canonical build synopsis with links to in-depth write-ups for each part of the system.
+
+Other notable documentation:
+- [docs/Lab1.md](docs/Lab1.md) - Lab 01 client proposal and data model narrative.
+- [docs/Midterm.md](docs/Midterm.md) - Midterm assignment requirements source text.
+- [docs/Walker_Brandon_Storefront_Story_Wireframes.md](docs/Walker_Brandon_Storefront_Story_Wireframes.md) - Story, audience, and visual direction with wireframe references.
+- [docs/OmniMediaTrak.pptx](docs/OmniMediaTrak.pptx) - Slide deck for OmniMediaTrak presentation materials.
 
 ## Assets
 

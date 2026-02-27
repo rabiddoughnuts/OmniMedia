@@ -2,6 +2,8 @@
 
 This document is the authoritative database plan for OmniMediaTrak. It defines the exact schema, indexes, and scaling strategy for a single PostgreSQL database using schema isolation.
 
+ER diagram: [ERDiagram.md](ERDiagram.md)
+
 ## 1. Use Case Summary
 
 OmniMediaTrak tracks all major media types (books, light novels, web novels, audiobooks, manga, comics, webtoons, anime, shows, web series, movies, games, visual novels, podcasts, music, live events). Users maintain personal lists, statuses, ratings, notes, and progress. The catalog is global and mostly read-only; user data is hot and strictly user-scoped.

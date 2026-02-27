@@ -9,6 +9,7 @@ This document is a high-level synopsis of the OmniMediaTrak architecture, roadma
 OmniMediaTrak is a global media tracking platform covering books, manga, anime, games, podcasts, live events, and more. The platform starts with a single-region, managed-first stack and evolves into multi-region compute with a single logical database that scales via partitioning, indexing, and replicas.
 
 **Primary goals:**
+
 - Fast catalog browsing and personal list tracking
 - Low operational burden (managed services)
 - Clear path to scale and add features without redesign
@@ -26,67 +27,53 @@ OmniMediaTrak is a global media tracking platform covering books, manga, anime, 
 - **Web:** Next.js App Router + TypeScript
 - **API:** Fastify + TypeScript (OpenAPI-first target)
 - **Auth:** in-app sessions; OIDC later
-- **Data:** single PostgreSQL DB with schema isolation
+- **Data:** single PostgreSQL DB (schema isolation under consideration)
 - **Edge:** Cloudflare caching and WAF
 - **Ingestion:** local/manual batch job (queue later)
 
 ## Topic synopsis with deep links
 
-### Database and data model
+### Database and data model ([database.md](database.md))
 
-- Single Postgres database with schema isolation (`media`, `users`, `interaction`, `auth`)
+- Single Postgres database; schema isolation is still being evaluated (`media`, `users`, `interaction`, `auth` if enabled)
 - `media.media` holds canonical metadata; type-specific fields in JSONB
 - `interaction.user_media` hash-partitioned by `user_id`
 - Relationships modeled as explicit graph edges
 
-Deep plan: [database.md](database.md)
-
-### API design
+### API design ([api.md](api.md))
 
 - REST API for media, lists, relationships, and auth
 - OpenAPI-first contract with shared schemas (planned)
 - Admin token for privileged media CRUD
 
-Deep plan: [api.md](api.md)
-
-### Ingestion
+### Ingestion ([ingestion.md](ingestion.md))
 
 - Local-first ingestion that is idempotent and transactional
 - Import pipeline uses external IDs and attributes JSONB
 - Future option: queue-backed ingestion
 
-Deep plan: [ingestion.md](ingestion.md)
-
-### Frontend
+### Frontend ([frontend.md](frontend.md))
 
 - Catalog browsing and personal lists
 - Table-first UI with filters, columns, and list actions
 - Home intro + donate panel, with tiles planned to hook into tracking actions
 - Parity checklist for the original UI layout
 
-Deep plan: [frontend.md](frontend.md)
-
-### Config and environments
+### Config and environments ([config.md](config.md))
 
 - Environment variables for API, web, and ingestion
 - Local vs production defaults
 
-Deep plan: [config.md](config.md)
-
-### Runbook
+### Runbook ([runbook.md](runbook.md))
 
 - Migrations, seed imports, validation queries
 - Rollback guidance and verification steps
 
-Deep plan: [runbook.md](runbook.md)
-
-### AWS deployment
+### AWS deployment ([deployment-aws.md](deployment-aws.md))
 
 - ECS Fargate + ALB + RDS Postgres + S3
 - Cloudflare for edge caching and WAF
 - Multi-region compute failover plan
-
-Deep plan: [deployment-aws.md](deployment-aws.md)
 
 ## Working plans
 
