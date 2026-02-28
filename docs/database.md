@@ -2,62 +2,64 @@
 
 This document is the authoritative database plan for OmniMediaTrak. It defines the exact schema, indexes, and scaling strategy for a single PostgreSQL database using schema isolation.
 
-ER diagram: [ERDiagram.md](ERDiagram.md)
-
-## 1. Use Case Summary
-
-OmniMediaTrak tracks all major media types (books, light novels, web novels, audiobooks, manga, comics, webtoons, anime, shows, web series, movies, games, visual novels, podcasts, music, live events). Users maintain personal lists, statuses, ratings, notes, and progress. The catalog is global and mostly read-only; user data is hot and strictly user-scoped.
-
-## 2. Database Scope
-
+- `external_id VARCHAR(255)` (convenience ID, unique)
+- `media_type VARCHAR(255) NOT NULL` (flat discriminator)
+- `title VARCHAR(255) NOT NULL`
+- `country_of_origin VARCHAR(255)`
+- `creators VARCHAR(255)[]`
+- `cover_url VARCHAR(255)`
+- `description VARCHAR(255)`
 - Single PostgreSQL database
 - Schemas: `media`, `users`, `interaction`, `auth`
 - Primary design goal: fast user-scoped queries at large scale with minimal cross-domain coupling
 
 Note: Schema isolation is still under consideration. We may keep schema separation for clarity and permissions, or collapse to a single schema to simplify tooling and queries. This document currently assumes schema isolation, but the table layouts remain the same either way.
-
-## 3. Media Schema (Canonical Data)
+- `source_name VARCHAR(255) NOT NULL`
+- `external_key VARCHAR(255) NOT NULL`
 
 ### 3.1 media.media (base table)
 
 Core fields are shared across all media types; type-specific fields live in JSONB.
 
-Columns:
+- `notes VARCHAR(255)`
 
 - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
 - `external_id TEXT` (convenience ID, unique)
 - `media_type TEXT NOT NULL` (flat discriminator)
 - `media_class LTREE NOT NULL` (taxonomy hierarchy)
-- `title TEXT NOT NULL`
-- `release_date DATE`
+- `status VARCHAR(255) NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'in-progress', 'completed', 'dropped'))`
+- `notes VARCHAR(255)`
 - `country_of_origin TEXT`
 - `creators TEXT[]`
 - `cover_url TEXT`
 - `description TEXT`
 - `attributes JSONB NOT NULL DEFAULT '{}'`
-- `search_vector TSVECTOR`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 - `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
+-    - `name VARCHAR(255) NOT NULL`
+-    - `description VARCHAR(255)`
+-    - `list_type VARCHAR(255) NOT NULL CHECK (list_type IN ('static', 'smart'))`
 Type-specific examples stored in `attributes`:
 
 - Books: `isbn`, `publisher`, `page_count`, `edition`
-- Movies/Shows: `runtime_minutes`, `episode_count`, `season_count`, `studio`
 - Games: `platforms`, `engine`, `playtime_hours`
 - Audio: `narrator`, `duration_minutes`, `label`
 - Events: `venue`, `capacity`, `event_type`
 
 Indexes (exact):
+-    - `email VARCHAR(255) NOT NULL UNIQUE`
+-    - `username VARCHAR(255) UNIQUE`
+-    - `password_hash VARCHAR(255) NOT NULL`
+-    - `role VARCHAR(255) NOT NULL DEFAULT 'user'`
+-    - `settings JSONB NOT NULL DEFAULT '{}'`
 
-- `CREATE INDEX idx_media_type ON media.media (media_type);`
 - `CREATE INDEX idx_media_title ON media.media (title);`
-- `CREATE INDEX idx_media_external_id ON media.media (external_id);`
 - `CREATE UNIQUE INDEX idx_media_external_id_unique ON media.media (external_id);`
-- `CREATE INDEX idx_media_class ON media.media USING GIST (media_class);`
 - `CREATE INDEX idx_media_attributes ON media.media USING GIN (attributes);`
 - `CREATE INDEX idx_media_attr_isbn ON media.media ((attributes->>'isbn'));`
 - `CREATE INDEX idx_media_attr_runtime_minutes ON media.media ((attributes->>'runtime_minutes'));`
-- `CREATE INDEX idx_media_attr_episode_count ON media.media ((attributes->>'episode_count'));`
+-    - `filter_definition JSONB` (smart list functionality is included here; no separate smart_lists table)
 - `CREATE INDEX idx_media_attr_platforms ON media.media USING GIN ((attributes->'platforms'));`
 - `CREATE INDEX idx_media_attr_genres ON media.media USING GIN ((attributes->'genres'));`
 
