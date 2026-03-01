@@ -1,0 +1,85 @@
+# OmniMediaTrak Proposal (Synopsis)
+
+**Last updated:** 2026-02-25
+
+This document is a high-level synopsis of the OmniMediaTrak architecture, roadmap, and technology choices. Each topic links to a deeper plan for implementation details, optimization, and runbooks.
+
+## Executive summary
+
+OmniMediaTrak is a global media tracking platform covering books, manga, anime, games, podcasts, live events, and more. The platform starts with a single-region, managed-first stack and evolves into multi-region compute with a single logical database that scales via partitioning, indexing, and replicas.
+
+**Primary goals:**
+
+- Fast catalog browsing and personal list tracking
+- Low operational burden (managed services)
+- Clear path to scale and add features without redesign
+
+## Scope by phase (summary)
+
+- **Phase 0 (MVP):** catalog browsing, auth, personal lists, local/manual ingestion
+- **Phase 1:** multi-region compute failover
+- **Phase 2-3:** EU/APAC compute for latency
+- **Phase 4:** database scaling hardening (partitions, indexes, replicas)
+- **Phase 5:** social features via derived read models
+
+## Architecture summary
+
+- **Web:** Next.js App Router + TypeScript
+- **API:** Fastify + TypeScript (OpenAPI-first target)
+- **Auth:** in-app sessions; OIDC later
+	- Current state: sessions/tokens are handled by backend application logic.
+	- Before scale hardening: move to DB-backed `auth.sessions` and `auth.tokens` for durability, revocation, and multi-instance consistency.
+- **Data:** single PostgreSQL DB (schema isolation under consideration)
+- **Edge:** Cloudflare caching and WAF
+- **Ingestion:** local/manual batch job (queue later)
+
+## Topic synopsis with deep links
+
+### Database and data model ([database.md](database.md))
+
+- Single Postgres database; schema isolation is still being evaluated (`media`, `users`, `interaction`, `auth` if enabled)
+- `media.media` holds canonical metadata; non-universal/type-specific fields are kept in JSONB for now
+- Before scale hardening, move type-specific attributes from JSONB into media-specific tables
+- `interaction.user_media` hash-partitioned by `user_id`
+- Relationships modeled as explicit graph edges
+
+### API design ([api.md](api.md))
+
+- REST API for media, lists, relationships, and auth
+- OpenAPI-first contract with shared schemas (planned)
+- Admin token for privileged media CRUD
+
+### Ingestion ([ingestion.md](ingestion.md))
+
+- Local-first ingestion that is idempotent and transactional
+- Import pipeline uses external IDs and attributes JSONB (current phase)
+- Before scale hardening, attribute payloads transition to media-specific tables
+- Future option: queue-backed ingestion
+
+### Frontend ([frontend.md](frontend.md))
+
+- Catalog browsing and personal lists
+- Table-first UI with filters, columns, and list actions
+- Home intro + donate panel, with tiles planned to hook into tracking actions
+- Parity checklist for the original UI layout
+
+### Config and environments ([config.md](config.md))
+
+- Environment variables for API, web, and ingestion
+- Local vs production defaults
+
+### Runbook ([runbook.md](runbook.md))
+
+- Migrations, seed imports, validation queries
+- Rollback guidance and verification steps
+
+### AWS deployment ([deployment-aws.md](deployment-aws.md))
+
+- ECS Fargate + ALB + RDS Postgres + S3
+- Cloudflare for edge caching and WAF
+- Multi-region compute failover plan
+
+## Working plans
+
+- MVP execution plan: [mvp-plan.md](mvp-plan.md)
+- Backlog and priorities: [backlog.md](backlog.md)

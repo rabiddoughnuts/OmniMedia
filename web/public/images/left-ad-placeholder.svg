@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 360" role="img" aria-label="Left ad placeholder">
+  <rect width="120" height="360" rx="16" fill="#fde68a" />
+  <rect x="14" y="20" width="92" height="12" rx="6" fill="#f97316" />
+  <rect x="14" y="40" width="70" height="8" rx="4" fill="#fb923c" />
+  <rect x="14" y="300" width="80" height="10" rx="5" fill="#fb923c" />
+</svg>
