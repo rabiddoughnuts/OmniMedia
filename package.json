@@ -16,7 +16,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:shared": "npm --prefix packages/shared run build"
+    "build:shared": "npm --prefix packages/shared run build",
+    "setup:full": "bash ./scripts/full-setup-and-run.sh",
+    "setup:db": "bash ./scripts/full-setup-and-run.sh --bootstrap-only"
   },
   "dependencies": {
     "fastify": "^5.7.4"

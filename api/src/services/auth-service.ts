@@ -29,6 +29,15 @@ function isUniqueViolation(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as DbError).code === "23505";
 }
 
+async function logLoginEvent(userId: string): Promise<void> {
+  const db = getDb();
+  await db.query(
+    `INSERT INTO auth.login_events (user_id)
+     VALUES ($1)`,
+    [userId]
+  );
+}
+
 export async function registerUser(input: RegisterInput): Promise<RegisterResult> {
   const db = getDb();
 
@@ -58,6 +67,8 @@ export async function registerUser(input: RegisterInput): Promise<RegisterResult
     throw error;
   }
 
+  await logLoginEvent(rows[0].id);
+
   return { user: rows[0], alreadyExists: false };
 }
 
@@ -79,6 +90,8 @@ export async function loginUser(input: LoginInput) {
   if (!valid) {
     return { user: null };
   }
+
+  await logLoginEvent(user.id);
 
   return { user };
 }

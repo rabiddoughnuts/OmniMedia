@@ -4,6 +4,7 @@ export class User extends Model {
   declare id: string;
   declare email: string;
   declare passwordHash: string;
+  declare settings: Record<string, unknown>;
   declare createdAt: Date;
 }
 
@@ -24,6 +25,12 @@ export function initUserModel(sequelize: Sequelize) {
         type: DataTypes.TEXT,
         allowNull: false,
         field: "password_hash",
+      },
+      settings: {
+        type: DataTypes.JSONB,
+        allowNull: false,
+        defaultValue: {},
+        field: "settings",
       },
       createdAt: {
         type: DataTypes.DATE,
