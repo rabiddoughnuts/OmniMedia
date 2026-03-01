@@ -27,6 +27,8 @@ OmniMediaTrak is a global media tracking platform covering books, manga, anime, 
 - **Web:** Next.js App Router + TypeScript
 - **API:** Fastify + TypeScript (OpenAPI-first target)
 - **Auth:** in-app sessions; OIDC later
+	- Current state: sessions/tokens are handled by backend application logic.
+	- Before scale hardening: move to DB-backed `auth.sessions` and `auth.tokens` for durability, revocation, and multi-instance consistency.
 - **Data:** single PostgreSQL DB (schema isolation under consideration)
 - **Edge:** Cloudflare caching and WAF
 - **Ingestion:** local/manual batch job (queue later)
@@ -36,7 +38,8 @@ OmniMediaTrak is a global media tracking platform covering books, manga, anime, 
 ### Database and data model ([database.md](database.md))
 
 - Single Postgres database; schema isolation is still being evaluated (`media`, `users`, `interaction`, `auth` if enabled)
-- `media.media` holds canonical metadata; type-specific fields in JSONB
+- `media.media` holds canonical metadata; non-universal/type-specific fields are kept in JSONB for now
+- Before scale hardening, move type-specific attributes from JSONB into media-specific tables
 - `interaction.user_media` hash-partitioned by `user_id`
 - Relationships modeled as explicit graph edges
 
@@ -49,7 +52,8 @@ OmniMediaTrak is a global media tracking platform covering books, manga, anime, 
 ### Ingestion ([ingestion.md](ingestion.md))
 
 - Local-first ingestion that is idempotent and transactional
-- Import pipeline uses external IDs and attributes JSONB
+- Import pipeline uses external IDs and attributes JSONB (current phase)
+- Before scale hardening, attribute payloads transition to media-specific tables
 - Future option: queue-backed ingestion
 
 ### Frontend ([frontend.md](frontend.md))

@@ -21,6 +21,10 @@ Note: Schema isolation is still under consideration. We may keep schema separati
 
 Core fields are shared across all media types; type-specific fields live in JSONB.
 
+Current phase: non-universal/type-specific attributes are stored in `attributes` JSONB.
+
+Before scale hardening: move type-specific attributes into media-specific tables.
+
 - `notes VARCHAR(255)`
 
 - `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
@@ -173,6 +177,8 @@ Smart lists:
     - `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 - Related profile/settings tables (future expansion)
 - `auth.sessions`, `auth.tokens`, `auth.login_events`
+- Current implementation note: sessions and tokens are backend-handled for now.
+- Pre-scale requirement: transition to DB-backed `auth.sessions` and `auth.tokens` (with `auth.login_events`) before scale hardening.
 
 ## 6. Scaling Targets and Table Sizes
 

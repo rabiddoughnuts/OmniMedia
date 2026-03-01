@@ -120,6 +120,10 @@ attributes (JSONB)
 
 Stores type-specific metadata (e.g. ISBN, runtime, episode count)
 
+Current phase: non-universal attributes remain in JSONB.
+
+Before scale hardening: move type-specific attributes into media-specific tables.
+
 Avoids sparse columns and inheritance joins
 
 Selectively indexed for high-value fields
@@ -207,6 +211,9 @@ auth schema — Authentication
 auth.sessions
 auth.tokens
 auth.login_events
+
+Current state: sessions/tokens are handled in backend application logic.
+Before scale hardening: move sessions/tokens to DB-backed auth tables for durability, revocation, and multi-instance consistency.
 
 Isolated for security and auditing.
 
