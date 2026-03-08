@@ -380,12 +380,27 @@ html[data-theme="dark"] .logo-dark {
   top: calc(100% + 0.75rem);
   right: 0;
   width: 18rem;
+  max-width: min(92vw, 18rem);
   padding: 1.5rem;
   background: var(--surface-strong);
   border: 3px solid var(--border);
   border-radius: 1rem;
   box-shadow: var(--shadow);
   z-index: 20;
+}
+
+.login-dropdown .form-field {
+  min-width: 0;
+}
+
+.login-dropdown .input {
+  width: 100%;
+  min-width: 0;
+  display: block;
+}
+
+.login-dropdown .auth-button {
+  width: 100%;
 }
 
 .user-menu {
@@ -626,6 +641,7 @@ html[data-theme="dark"] .logo-dark {
   top: calc(100% + 0.65rem);
   left: 0;
   min-width: 260px;
+  max-width: min(92vw, 560px);
   background: var(--surface-strong);
   border: 2px solid var(--border);
   border-radius: 16px;
@@ -634,9 +650,27 @@ html[data-theme="dark"] .logo-dark {
   z-index: 12;
 }
 
+.filter-menu[hidden],
+.columns-menu[hidden],
+.login-dropdown[hidden] {
+  display: none !important;
+}
+
+.filter-menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.9rem;
+  min-width: 420px;
+  width: min(520px, calc(100vw - 4rem));
+  align-items: start;
+}
+
 .filter-pane {
   display: grid;
   gap: 0.5rem;
+  align-content: start;
+  min-height: 0;
+  min-width: 0;
 }
 
 .menu-label {
@@ -653,6 +687,19 @@ html[data-theme="dark"] .logo-dark {
   padding: 0;
   display: grid;
   gap: 0.35rem;
+  width: 100%;
+  scrollbar-gutter: stable;
+}
+
+#filterColumnsList,
+#filterValuesList {
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.columns-menu {
+  width: min(340px, calc(100vw - 2rem));
 }
 
 .filter-list li {
@@ -958,9 +1005,58 @@ html[data-theme="dark"] .logo-dark {
     padding: clamp(1.5rem, 4vw, 2rem);
   }
 
+  .controls-bar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .controls-bar .control-group,
+  .filter-group,
+  .filter-row,
+  .filter-dropdown,
+  .columns-dropdown {
+    width: 100%;
+  }
+
+  .filter-row {
+    align-items: flex-start;
+  }
+
+  .filter-menu {
+    grid-template-columns: 1fr;
+    min-width: 260px;
+    width: min(92vw, 340px);
+  }
+
+  .columns-menu,
+  .login-dropdown {
+    width: min(92vw, 320px);
+    max-width: min(92vw, 320px);
+  }
+
+  .filter-status {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .hero__actions {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 721px) {
+  .controls-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .login-dropdown {
+    width: min(92vw, 20rem);
+    max-width: min(92vw, 20rem);
+  }
+
+  .filter-menu {
+    width: min(92vw, 500px);
   }
 }
 
