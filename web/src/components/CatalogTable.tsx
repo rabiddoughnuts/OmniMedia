@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 type MediaItem = {
@@ -67,6 +67,7 @@ function getColumnValue(item: MediaItem, key: ColumnKey): string {
 }
 
 export default function CatalogTable({ items }: Props) {
+  const controlsRef = useRef<HTMLDivElement | null>(null);
   const [listIds, setListIds] = useState<Set<string>>(new Set());
   const [listStatus, setListStatus] = useState<"loading" | "ready" | "unauth" | "error">(
     "loading"
@@ -114,6 +115,33 @@ export default function CatalogTable({ items }: Props) {
     }
 
     loadList();
+  }, []);
+
+  useEffect(() => {
+    function handleClick(event: MouseEvent) {
+      if (!controlsRef.current) {
+        return;
+      }
+      if (!controlsRef.current.contains(event.target as Node)) {
+        setIsFilterOpen(false);
+        setIsColumnsOpen(false);
+      }
+    }
+
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsFilterOpen(false);
+        setIsColumnsOpen(false);
+      }
+    }
+
+    document.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKey);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
   }, []);
 
   async function addToList(mediaId: string) {
@@ -242,7 +270,7 @@ export default function CatalogTable({ items }: Props) {
 
   return (
     <>
-      <div className="controls-bar">
+      <div ref={controlsRef} className="controls-bar">
         <div className="control-group filter-group">
           <div className="filter-row">
             <div className="filter-dropdown">
